@@ -9,8 +9,8 @@ const authService = require('./services/auth.service');
 const mailer = require('./services/mailer.service')
 const indexRouter = require('./routes/index');
 const userRouter = require('./routes/user');
-const publicRouter = require('./routes/public');
-const customerRouter = require('./routes/customer');
+//const publicRouter = require('./routes/public');
+//const customerRouter = require('./routes/customer');
 const categoryRouter = require('./routes/category');
 const uomRouter = require('./routes/uom');
 const brandRouter = require('./routes/brand');
@@ -20,7 +20,7 @@ const productInwardRouter = require('./routes/productInward');
 const dispatchOrderRouter = require('./routes/dispatchOrder');
 const productOutwardRouter = require('./routes/productOutward');
 const inventoryRouter = require('./routes/inventory');
-const customerInquiryRouter = require('./routes/customerInquiry');
+//const customerInquiryRouter = require('./routes/customerInquiry');
 
 
 
@@ -39,10 +39,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/v1/', indexRouter);
 app.use('/api/v1/user', userRouter);
-app.use('/api/v1/public', publicRouter);
-app.use('/api/v1/customer', authService.isLoggedIn, customerRouter);
+//app.use('/api/v1/public', publicRouter);
+//app.use('/api/v1/customer', authService.isLoggedIn, customerRouter);
 app.use('/api/v1/category', authService.isLoggedIn, categoryRouter);
-app.use('/api/v1/customer-inquiry', authService.isLoggedIn, customerInquiryRouter);
+//app.use('/api/v1/customer-inquiry', authService.isLoggedIn, customerInquiryRouter);
 app.use('/api/v1/uom', authService.isLoggedIn, uomRouter);
 app.use('/api/v1/brand', authService.isLoggedIn, brandRouter);
 app.use('/api/v1/warehouse', authService.isLoggedIn, warehouseRouter);
