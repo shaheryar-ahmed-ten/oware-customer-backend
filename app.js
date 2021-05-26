@@ -34,15 +34,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/v1/', indexRouter);
 app.use('/api/v1/user', userRouter);
-app.use('/api/v1/category', authService.isLoggedIn, categoryRouter);
-app.use('/api/v1/uom', authService.isLoggedIn, uomRouter);
-app.use('/api/v1/brand', authService.isLoggedIn, brandRouter);
-app.use('/api/v1/warehouse', authService.isLoggedIn, warehouseRouter);
-app.use('/api/v1/product', authService.isLoggedIn, productRouter);
-app.use('/api/v1/product-inward', authService.isLoggedIn, productInwardRouter);
-app.use('/api/v1/dispatch-order', authService.isLoggedIn, dispatchOrderRouter);
-app.use('/api/v1/product-outward', authService.isLoggedIn, productOutwardRouter);
-app.use('/api/v1/inventory', authService.isLoggedIn, inventoryRouter);
+app.use('/api/v1/category', isLoggedIn, categoryRouter);
+app.use('/api/v1/uom', isLoggedIn, uomRouter);
+app.use('/api/v1/brand', isLoggedIn, brandRouter);
+app.use('/api/v1/warehouse', isLoggedIn, warehouseRouter);
+app.use('/api/v1/product', isLoggedIn, productRouter);
+app.use('/api/v1/product-inward', isLoggedIn, productInwardRouter);
+app.use('/api/v1/dispatch-order', isLoggedIn, dispatchOrderRouter);
+app.use('/api/v1/product-outward', isLoggedIn, productOutwardRouter);
+app.use('/api/v1/inventory', isLoggedIn, inventoryRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
