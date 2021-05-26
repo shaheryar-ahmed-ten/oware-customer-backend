@@ -42,7 +42,7 @@ const previousDate = currentDate.subtractDays(7)
     attributes: [
       [Sequelize.fn('sum', Sequelize.col('quantity')), 'totalQuantity'],
     ],
-    include: [{ model: Customer },{ model: Product,attributes: [
+    include: [{ model: Product,attributes: [
       [Sequelize.fn('sum', Sequelize.col('weight')), 'totalWeightInKGs'],
       [Sequelize.fn('sum', Sequelize.col('dimensionsCBM')), 'totalInCm3']
     ],}],
@@ -50,10 +50,11 @@ const previousDate = currentDate.subtractDays(7)
     orderBy: [['updatedAt', 'DESC']],
   
   });
+  const inboundStats = response
   res.json({
     success: true,
     message: 'respond with a resource',
-    data: response
+    inboundStats
     //pages: Math.ceil(response.count / limit)
   });
   
