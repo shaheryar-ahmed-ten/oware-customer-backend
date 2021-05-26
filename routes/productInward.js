@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { Inventory, ProductInward, User, Customer, Warehouse, Product, UOM } = require('../models')
 const config = require('../config');
-const { Op,sequelize } = require("sequelize");
+const { Op } = require("sequelize");
+const Sequelize = require('sequelize')
 const authService = require('../services/auth.service');
 const { digitizie } = require('../services/common.services');
 
@@ -28,10 +29,24 @@ router.get('/', async (req, res, next) => {
 });
 
 router.get('/dashboard/',async(req,res)=>{
-  const currentDate = new Date()
+  //Function to add or subrtract days in date and convert to ISO format
+  Date.prototype.subtractDays = function(days) {
+    var date = new Date(this.valueOf());
+    date.setDate(date.getDate() - days);
+    return date;
+}
+const currentDate = new Date()
+const previousDate = currentDate.subtractDays(7)
   const response = await ProductInward.findAndCountAll({
-    where: { [Op.and]: [{ "customerId":1 }, { createdAt: { [Op.between]: ["2021-05-19T14:00:32.000Z",currentDate]} }] },
-    include: [{ model: Customer }],
+    where: { [Op.and]: [{ "customerId":1 }, { createdAt: { [Op.between]: [previousDate,currentDate]} }] },
+    attributes: [
+      [Sequelize.fn('sum', Sequelize.col('quantity')), 'totalQuantity'],
+    ],
+    include: [{ model: Customer },{ model: Product,attributes: [
+      [Sequelize.fn('sum', Sequelize.col('weight')), 'totalWeightInKGs'],
+      [Sequelize.fn('sum', Sequelize.col('dimensionsCBM')), 'totalInCm3']
+    ],}],
+    group: ['customerId','productId'],
     orderBy: [['updatedAt', 'DESC']],
   
   });
