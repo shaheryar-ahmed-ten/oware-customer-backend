@@ -26,13 +26,9 @@ module.exports.isLoggedIn = (req, res, next) => {
       ],
     });
     if (!user)
-      return res
-        .status(401)
-        .json({ status: false, message: "User doesn't exist" });
+      return res.status(401).json({ status: false, message: "User doesn't exist" });
     else if (!user.isActive)
-      return res
-        .status(401)
-        .json({ status: false, message: 'User is inactive' });
+      return res.status(401).json({ status: false, message: 'User is inactive' });
     req.userId = decoded.id;
     user.password = undefined
     req.user = user;
@@ -41,17 +37,19 @@ module.exports.isLoggedIn = (req, res, next) => {
 };
 
 module.exports.isSuperAdmin = (req, res, next) => {
-  if (
-    req.user.Role.PermissionAccesses.find(
-      (permissionAccess) =>
-        permissionAccess.Permission.type == 'superadmin_privileges'
-    )
-  )
+  if (req.user.Role.type == 'SUPER_ADMIN')
     if (next) next();
     else return true;
   else if (next)
-    res
-      .status(401)
-      .json({ status: false, message: 'Operation not permitted!' });
+    res.status(401).json({ status: false, message: 'Operation not permitted!' });
+  else return false;
+};
+
+module.exports.checkPermission = permission => (req, res, next) => {
+  if (req.user.Role.PermissionAccesses.find((permissionAccess) => permissionAccess.Permission.type == permission))
+    if (next) next();
+    else return true;
+  else if (next)
+    res.status(401).json({ status: false, message: 'Operation not permitted!' });
   else return false;
 };
