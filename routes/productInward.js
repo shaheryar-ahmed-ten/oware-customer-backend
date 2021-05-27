@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const moment = require('moment')
 const { Inventory, ProductInward, User, Customer, Warehouse, Product, UOM } = require('../models')
 const config = require('../config');
 const { Op } = require("sequelize");
@@ -10,13 +11,9 @@ const { digitizie } = require('../services/common.services');
 router.get('/', async (req, res, next) => {
   let where 
   if (req.query.days) {
-    Date.prototype.subtractDays = function (days) {
-      var date = new Date(this.valueOf());
-      date.setDate(date.getDate() - days);
-      return date;
-    }
-    const currentDate = new Date()
-    const previousDate = currentDate.subtractDays(req.query.days)
+    const currentDate = moment()
+    const previousDate = moment().subtract(req.query.days, 'days')
+    console.log(previousDate)
      where = {
       'customerId': 1,//req.user.companyId
       'createdAt': { [Op.between]: [previousDate, currentDate] }
