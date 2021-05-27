@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { Inventory, ProductInward, ProductOutward,DispatchOrder, User, Customer, Warehouse, Product, UOM } = require('../models')
+const moment = require('moment')
+const { Inventory, ProductInward, ProductOutward, DispatchOrder, User, Customer, Warehouse, Product, UOM } = require('../models')
 const config = require('../config');
 const { Op } = require("sequelize");
 const Sequelize = require('sequelize')
@@ -28,40 +29,36 @@ router.get('/', async (req, res, next) => {
   });
 });
 
-router.get('/dashboard/',async(req,res)=>{
-  //Function to add or subrtract days in date and convert to ISO format
-  Date.prototype.subtractDays = function(days) {
-    var date = new Date(this.valueOf());
-    date.setDate(date.getDate() - days);
-    return date;
-}
-const currentDate = new Date()
-const previousDate = currentDate.subtractDays(7)
+router.get('/dashboard/', async (req, res) => {
+  const currentDate = moment()
+  const previousDate = moment().subtract(7, 'days')
   const inboundStats = await ProductInward.findAndCountAll({
-    where: { [Op.and]: [{ "customerId":1 }, { createdAt: { [Op.between]: [previousDate,currentDate]} }] },
+    where: { [Op.and]: [{ "customerId": 1 }, { createdAt: { [Op.between]: [previousDate, currentDate] } }] },
     attributes: [
       [Sequelize.fn('sum', Sequelize.col('quantity')), 'totalQuantity'],
     ],
-    include: [{ model: Product,attributes: [
-      [Sequelize.fn('sum', Sequelize.col('weight')), 'totalWeightInKGs'],
-      [Sequelize.fn('sum', Sequelize.col('dimensionsCBM')), 'totalInCm3']
-    ],}],
-    group: ['customerId','productId'],
+    include: [{
+      model: Product, attributes: [
+        [Sequelize.fn('sum', Sequelize.col('weight')), 'totalWeightInKGs'],
+        [Sequelize.fn('sum', Sequelize.col('dimensionsCBM')), 'totalInCm3']
+      ],
+    }],
+    group: ['customerId', 'productId'],
     orderBy: [['updatedAt', 'DESC']],
-  
+
   });
 
 
   const productAndWarehouseDetails = await Inventory.findAll({
-    where: { "customerId":1  },
+    where: { "customerId": 1 },
     attributes: [
       [Sequelize.fn('count', Sequelize.col('productId')), 'productsStored'],
       [Sequelize.fn('count', Sequelize.col('warehouseId')), 'warehousesUsed'],
     ],
-    group: ['customerId','productId'],
+    group: ['customerId', 'productId'],
     orderBy: [['updatedAt', 'DESC']],
   });
-  
+
   res.json({
     success: true,
     message: 'respond with a resource',
@@ -69,7 +66,7 @@ const previousDate = currentDate.subtractDays(7)
     productAndWarehouseDetails,
     //pages: Math.ceil(response.count / limit)
   });
-  
+
 })
 
 module.exports = router;
