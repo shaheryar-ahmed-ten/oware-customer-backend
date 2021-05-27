@@ -14,6 +14,10 @@ module.exports = (sequelize, DataTypes) => {
       User.belongsTo(models.Role, {
         foreignKey: 'roleId'
       });
+      User.belongsTo(models.Customer, {
+        as: 'Company',
+        foreignKey: 'companyId'
+      });
       User.hasOne(models.Customer, {
         foreignKey: 'contactId'
       });
@@ -30,6 +34,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       validate: { notEmpty: { msg: 'Role cannot be empty' } }
+    },
+    companyId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     },
     firstName: DataTypes.STRING,
     lastName: DataTypes.STRING,
