@@ -31,4 +31,4 @@ async function sendMail(payload) {
   return response;
 }
 
-//module.exports = { sendCustomerInquiryEmail };
+module.exports = {};
