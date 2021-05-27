@@ -13,7 +13,6 @@ router.get('/', async (req, res, next) => {
   if (req.query.days) {
     const currentDate = moment()
     const previousDate = moment().subtract(req.query.days, 'days')
-    console.log(previousDate)
      where = {
       'customerId': 1,//req.user.companyId
       'createdAt': { [Op.between]: [previousDate, currentDate] }
