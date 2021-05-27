@@ -9,16 +9,16 @@ const { digitizie } = require('../services/common.services');
 
 /* GET productInwards listing. */
 router.get('/', async (req, res, next) => {
-  let where 
+  let where
   if (req.query.days) {
     const currentDate = moment()
     const previousDate = moment().subtract(req.query.days, 'days')
-     where = {
+    where = {
       'customerId': 1,//req.user.companyId
       'createdAt': { [Op.between]: [previousDate, currentDate] }
     };
   } else {
-     where = {
+    where = {
       // userId: req.userId
       "customerId": 1,//req.user.companyId
     };
