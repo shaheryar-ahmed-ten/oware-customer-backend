@@ -51,19 +51,6 @@ const previousDate = currentDate.subtractDays(7)
   
   });
 
-  // const outboundStats = await ProductOutward.findAndCountAll({
-  //   where: { [Op.and]: [{ "dispatchOrderId":4 }, { createdAt: { [Op.between]: [previousDate,currentDate]} }] },
-  //   attributes: [
-  //     //[Sequelize.fn('sum', Sequelize.col('quantity')), 'totalQuantity'],
-  //   ],
-  //   include: [{model:DispatchOrder, include:[{model: Inventory,include:[{ model: Product,attributes: [
-  //     // [Sequelize.fn('sum', Sequelize.col('weight')), 'totalWeightInKGs'],
-  //     // [Sequelize.fn('sum', Sequelize.col('dimensionsCBM')), 'totalInCm3']
-  //   ],}]}]},],
-  //   group: ['dispatchOrderId',],
-  //   orderBy: [['updatedAt', 'DESC']],
-  
-  // });
 
   const productAndWarehouseDetails = await Inventory.findAll({
     where: { "customerId":1  },
@@ -74,25 +61,12 @@ const previousDate = currentDate.subtractDays(7)
     group: ['customerId','productId'],
     orderBy: [['updatedAt', 'DESC']],
   });
-
-  // const pendingDispatchOrders = []
-  // const filterDispatchOrdersForDropdown = () => {
-  //   const dispatchOrders = await DispatchOrder.findAll({})
-  //   dispatchOrders.forEach(dispatchOrder => {
-  //     //    loop to get the PO of each DO
-  //     let totalQuantityDispatched = dispatchOrder.ProductOutwards.reduce((acc, po) => acc + po.quantity, 0); // 1 DO
-  //     let remainingQuantityOfDispatch = dispatchOrder.quantity - totalQuantityDispatched // 1 DO's remaining quantity
-  //     if (remainingQuantityOfDispatch != 0) {
-  //       dispatchOrdersForDropdown.push(dispatchOrder);
-  //     }
-  //   });
-  // }
   
   res.json({
     success: true,
     message: 'respond with a resource',
     inboundStats,
-    productAndWarehouseDetails
+    productAndWarehouseDetails,
     //pages: Math.ceil(response.count / limit)
   });
   
