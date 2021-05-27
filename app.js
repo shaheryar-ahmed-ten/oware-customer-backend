@@ -47,7 +47,7 @@ app.use('/api/v1/uom', authService.isLoggedIn, uomRouter);
 app.use('/api/v1/brand', authService.isLoggedIn, brandRouter);
 app.use('/api/v1/warehouse', authService.isLoggedIn, warehouseRouter);
 app.use('/api/v1/product', authService.isLoggedIn, productRouter);
-app.use('/api/v1/product-inward', productInwardRouter);//authService.isLoggedIn removed
+app.use('/api/v1/product-inward', authService.isLoggedIn, productInwardRouter);
 app.use('/api/v1/dispatch-order', authService.isLoggedIn, dispatchOrderRouter);
 app.use('/api/v1/product-outward', authService.isLoggedIn, productOutwardRouter);
 app.use('/api/v1/inventory', authService.isLoggedIn, inventoryRouter);
