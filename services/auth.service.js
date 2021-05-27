@@ -39,7 +39,7 @@ module.exports.isLoggedIn = (req, res, next) => {
       message: 'User is not assigned to any company!'
     });
     req.userId = decoded.id;
-    req.companyId = user.companyId.id;
+    req.companyId = user.companyId;
     user.password = undefined
     req.user = user;
     return next();
