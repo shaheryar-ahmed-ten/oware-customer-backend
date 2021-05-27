@@ -9,6 +9,7 @@ module.exports.isLoggedIn = (req, res, next) => {
     return res
       .status(401)
       .json({ success: false, message: 'No token provided.' });
+
   jwt.verify(token, config.JWT_SECRET, async (err, decoded) => {
     if (err)
       return res
@@ -25,11 +26,20 @@ module.exports.isLoggedIn = (req, res, next) => {
         },
       ],
     });
-    if (!user)
-      return res.status(401).json({ status: false, message: "User doesn't exist" });
-    else if (!user.isActive)
-      return res.status(401).json({ status: false, message: 'User is inactive' });
+    if (!user) return res.status(401).json({
+      status: false,
+      message: "User doesn't exist"
+    });
+    if (!user.isActive) return res.status(401).json({
+      status: false,
+      message: 'User is inactive'
+    });
+    if (!user.companyId) return res.status(401).json({
+      status: false,
+      message: 'User is not assigned to any company!'
+    });
     req.userId = decoded.id;
+    req.companyId = user.companyId.id;
     user.password = undefined
     req.user = user;
     return next();
