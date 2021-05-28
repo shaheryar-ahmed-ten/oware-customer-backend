@@ -36,6 +36,7 @@ router.get('/', async (req, res, next) => {
 });
 
 router.get('/dashboard/', async (req, res) => {
+  let productAndWarehouseDetails = {}
   const currentDate = moment();
   const previousDate = moment().subtract(7, 'days');
   const inboundStats = await ProductInward.findAndCountAll({
@@ -53,16 +54,12 @@ router.get('/dashboard/', async (req, res) => {
     group: ['customerId', 'productId'],
     orderBy: [['updatedAt', 'DESC']],
   });
-
-  const productAndWarehouseDetails = await Inventory.findAll({
-    where: { customerId: req.companyId },
-    attributes: [
-      [Sequelize.fn('count', Sequelize.col('productId')), 'productsStored'],
-      [Sequelize.fn('count', Sequelize.col('warehouseId')), 'warehousesUsed'],
-    ],
-    group: ['customerId', 'productId'],
-    orderBy: [['updatedAt', 'DESC']],
-  });
+  const productsStored = await Inventory.aggregate('productId', 'count', { distinct: true , where:{ customerId:req.companyId }})
+  const warehousesUsed = await Inventory.aggregate('warehouseId', 'count', { distinct: true , where:{ customerId:req.companyId }})
+  productAndWarehouseDetails = {
+    productsStored,
+    warehousesUsed
+  }
   res.json({
     success: true,
     message: 'respond with a resource',
