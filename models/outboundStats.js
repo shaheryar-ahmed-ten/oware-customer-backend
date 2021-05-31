@@ -24,7 +24,7 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'dispatchOrderId'
       });
       OutboundStat.belongsTo(models.ProductOutward, {
-        foreignKey: 'productOutwardId'
+        foreignKey: 'id'
       });
     }
   };
@@ -33,7 +33,6 @@ module.exports = (sequelize, DataTypes) => {
     warehouseId: DataTypes.INTEGER,
     productId: DataTypes.INTEGER,
     dispatchOrderId: DataTypes.INTEGER,
-    productOutwardId: DataTypes.INTEGER,
     product: DataTypes.STRING,
     weight: DataTypes.INTEGER,
     dimensionsCBM: DataTypes.INTEGER,
@@ -41,7 +40,7 @@ module.exports = (sequelize, DataTypes) => {
     warehouse: DataTypes.STRING,
     customer: DataTypes.STRING,
     dispatchOrderCreatedAt: DataTypes.DATE,
-    productOutwardCreatedAt: DataTypes.DATE
+    createdAt: DataTypes.DATE
   }, {
     sequelize,
     modelName: 'OutboundStat',

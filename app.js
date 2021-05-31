@@ -30,6 +30,7 @@ app.use('/api/v1/', indexRouter);
 app.use('/api/v1/user', userRouter);
 app.use('/api/v1/dashboard', isLoggedIn, dashboardRouter);
 app.use('/api/v1/inward', isLoggedIn, inwardRouter);
+app.use('/api/v1/order', isLoggedIn, orderRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
