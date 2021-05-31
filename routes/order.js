@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const moment = require('moment')
-const { Warehouse, Product, UOM, OutboundStat, DispatchOrder } = require('../models')
+const { Warehouse, Product, UOM, OutboundStat, DispatchOrder, ProductOutward, Vehicle } = require('../models')
 const config = require('../config');
 const { Op } = require('sequelize');
 
@@ -22,7 +22,7 @@ router.get('/', async (req, res, next) => {
     }));
 
     const response = await OutboundStat.findAndCountAll({
-        include: [{ model: DispatchOrder, model: Product, include: [{ model: UOM }] }, { model: Warehouse }],
+        include: [{ model: DispatchOrder, model: ProductOutward, include: [{ model: Vehicle}], model: Product, include: [{ model: UOM }] }, { model: Warehouse }],
         orderBy: [['createdAt', 'DESC']],
         where, limit, offset
     });
