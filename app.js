@@ -10,6 +10,8 @@ const { syncPermissions } = require('./services/permission.service');
 const indexRouter = require('./routes/index');
 const userRouter = require('./routes/user');
 const dashboardRouter = require('./routes/dashboard');
+const inwardRouter = require('./routes/inward')
+const orderRouter = require('./routes/order')
 
 const app = express();
 
@@ -27,6 +29,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/v1/', indexRouter);
 app.use('/api/v1/user', userRouter);
 app.use('/api/v1/dashboard', isLoggedIn, dashboardRouter);
+app.use('/api/v1/inward', isLoggedIn, inwardRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
