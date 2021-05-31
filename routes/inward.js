@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const moment = require('moment')
-const { ProductInward, Warehouse, Product, UOM, Inventory, InboundStat } = require('../models')
+const { ProductInward, Warehouse, Product, UOM, InboundStat } = require('../models')
 const config = require('../config');
 const { Op } = require('sequelize');
 
