@@ -22,7 +22,7 @@ router.get('/', async (req, res, next) => {
     }));
 
     const response = await OutboundStat.findAndCountAll({
-        include: [{ model: DispatchOrder, include: [{ model: ProductOutward, include: [{ model: Vehicle}], }], model: Product, include: [{ model: UOM }] }, { model: Warehouse }],
+        include: [{ model: DispatchOrder, include: [{ model: ProductOutward, include: [{ model: Vehicle }] }] }, { model: Product, include: [{ model: UOM }] }, { model: Warehouse }],
         orderBy: [['createdAt', 'DESC']],
         where, limit, offset
     });

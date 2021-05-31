@@ -38,7 +38,6 @@ module.exports = (sequelize, DataTypes) => {
     dimensionsCBM: DataTypes.INTEGER,
     uom: DataTypes.STRING,
     warehouse: DataTypes.STRING,
-    dispatchOrder: DataTypes.STRING,
     customer: DataTypes.STRING,
     dispatchOrderCreatedAt: DataTypes.DATE,
     createdAt: DataTypes.DATE
