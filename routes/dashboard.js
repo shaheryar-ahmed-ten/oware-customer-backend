@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
   }
 
   const outboundStats = {
-    total: await OutboundStat.aggregate('productOutwardId', 'count', {
+    total: await OutboundStat.aggregate('id', 'count', {
       distinct: true,
       where: whereClauseWithDate
     }),
@@ -48,8 +48,8 @@ router.get('/', async (req, res) => {
     ...(await sequelize.query(`
       select count(*) as pendingOrders from
       (select dispatchOrderId as id,
-        count(productOutwardId) as totalOutwards,
-        sum(dispatchOrderQuantity) > sum(productOutwardQuantity) as isPendingOrder
+        count(id) as totalOutwards,
+        sum(dispatchOrderQuantity) > sum(quantity) as isPendingOrder
         from OutboundStats group by dispatchOrderId)
         as orders where isPendingOrder = 1;
     `, {
