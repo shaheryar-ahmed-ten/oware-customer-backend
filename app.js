@@ -9,15 +9,7 @@ const { isLoggedIn, checkPermission } = require('./services/auth.service');
 const { syncPermissions } = require('./services/permission.service');
 const indexRouter = require('./routes/index');
 const userRouter = require('./routes/user');
-const categoryRouter = require('./routes/category');
-const uomRouter = require('./routes/uom');
-const brandRouter = require('./routes/brand');
-const warehouseRouter = require('./routes/warehouse');
-const productRouter = require('./routes/product');
-const productInwardRouter = require('./routes/productInward');
-const dispatchOrderRouter = require('./routes/dispatchOrder');
-const productOutwardRouter = require('./routes/productOutward');
-const inventoryRouter = require('./routes/inventory');
+const dashboardRouter = require('./routes/dashboard');
 
 const app = express();
 
@@ -34,15 +26,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/v1/', indexRouter);
 app.use('/api/v1/user', userRouter);
-app.use('/api/v1/category', isLoggedIn, categoryRouter);
-app.use('/api/v1/uom', isLoggedIn, uomRouter);
-app.use('/api/v1/brand', isLoggedIn, brandRouter);
-app.use('/api/v1/warehouse', isLoggedIn, warehouseRouter);
-app.use('/api/v1/product', isLoggedIn, productRouter);
-app.use('/api/v1/product-inward', isLoggedIn, productInwardRouter);
-app.use('/api/v1/dispatch-order', isLoggedIn, dispatchOrderRouter);
-app.use('/api/v1/product-outward', isLoggedIn, productOutwardRouter);
-app.use('/api/v1/inventory', isLoggedIn, inventoryRouter);
+app.use('/api/v1/dashboard', isLoggedIn, dashboardRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
