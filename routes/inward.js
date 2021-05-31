@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const moment = require('moment')
-const { ProductInward, Warehouse, Product, UOM } = require('../models')
+const { ProductInward, Warehouse, Product, UOM, Inventory, InboundStat } = require('../models')
 const config = require('../config');
 const { Op } = require('sequelize');
 
@@ -35,17 +35,17 @@ router.get('/', async (req, res, next) => {
 });
 
 router.get('/relations', async (req, res, next) => {
-    const relations = await Inventory.findAll({
-        where: { customerId: req.companyId },
-        attributes: ['id'],
-        include: [{
-            model: Product,
-            attributes: ['name']
-        }, {
-            model: Warehouse,
-            attributes: ['name']
-        }]
-    });
+    const whereClauseWithoutDate = { customerId: req.companyId };
+    const relations = {
+        warehouses: await InboundStat.aggregate('warehouse', 'distinct', {
+            plain: false,
+            where: whereClauseWithoutDate
+        }),
+        products: await InboundStat.aggregate('product', 'distinct', {
+            plain: false,
+            where: whereClauseWithoutDate
+        }),
+    }
 
     res.json({
         success: true,
