@@ -31,6 +31,7 @@ module.exports = (sequelize, DataTypes) => {
   OutboundStat.init({
     customerId: DataTypes.INTEGER,
     warehouseId: DataTypes.INTEGER,
+    vehicleId: DataTypes.INTEGER,
     productId: DataTypes.INTEGER,
     dispatchOrderId: DataTypes.INTEGER,
     product: DataTypes.STRING,
