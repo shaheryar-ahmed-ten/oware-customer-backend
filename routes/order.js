@@ -49,6 +49,25 @@ router.get('/', async (req, res, next) => {
     });
 });
 
+router.get('/relations', async (req, res, next) => {
+    const whereClauseWithoutDate = { customerId: req.companyId };
+    const relations = {
+        warehouses: await OutboundStat.aggregate('warehouse', 'distinct', {
+            plain: false,
+            where: whereClauseWithoutDate
+        }),
+        products: await OutboundStat.aggregate('product', 'distinct', {
+            plain: false,
+            where: whereClauseWithoutDate
+        }),
+    }
+
+    res.json({
+        success: true,
+        message: 'respond with a resource',
+        relations
+    });
+});
 
 router.get('/:id', async (req, res, next) => {
     const limit = req.query.rowsPerPage || config.rowsPerPage;
@@ -70,26 +89,6 @@ router.get('/:id', async (req, res, next) => {
             message: err.errors.pop().message
         });
     }
-});
-
-router.get('/relations', async (req, res, next) => {
-    const whereClauseWithoutDate = { customerId: req.companyId };
-    const relations = {
-        warehouses: await OutboundStat.aggregate('warehouse', 'distinct', {
-            plain: false,
-            where: whereClauseWithoutDate
-        }),
-        products: await OutboundStat.aggregate('product', 'distinct', {
-            plain: false,
-            where: whereClauseWithoutDate
-        }),
-    }
-
-    res.json({
-        success: true,
-        message: 'respond with a resource',
-        relations
-    });
 });
 
 module.exports = router;
