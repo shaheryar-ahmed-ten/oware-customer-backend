@@ -45,7 +45,7 @@ router.get('/', async (req, res, next) => {
         success: true,
         message: 'respond with a resource',
         data: response.rows,
-        pages: Math.ceil(response.count / limit)
+        pages: Math.ceil(response.count.length / limit)
     });
 });
 
