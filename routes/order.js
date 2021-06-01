@@ -41,6 +41,7 @@ router.get('/', async (req, res, next) => {
         where, limit, offset,
         group: ['dispatchOrderId']
     });
+    console.log(response.count)
     res.json({
         success: true,
         message: 'respond with a resource',
@@ -65,8 +66,6 @@ router.get('/:id', async (req, res, next) => {
             pages: Math.ceil(response.count / limit)
         });
     } catch (err) {
-        console.log(err.message)
-
         return res.json({
             success: false,
             message: err.errors.pop().message
