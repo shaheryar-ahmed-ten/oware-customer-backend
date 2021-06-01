@@ -3,7 +3,7 @@ const router = express.Router();
 const moment = require('moment')
 const { Warehouse, Product, UOM, OutboundStat, DispatchOrder, ProductOutward, Vehicle } = require('../models')
 const config = require('../config');
-const { Op } = require('sequelize');
+const { Op, Sequelize } = require('sequelize');
 
 /* GET orders listing. */
 router.get('/', async (req, res, next) => {
@@ -17,14 +17,29 @@ router.get('/', async (req, res, next) => {
         const previousDate = moment().subtract(req.query.days, 'days');
         where['createdAt'] = { [Op.between]: [previousDate, currentDate] };
     }
-    if (req.query.search) where[Op.or] = ['$Product.name$', '$ProductOutward.referenceId$', '$Warehouse.name$'].map(key => ({
+    // if ('status' in req.query) {
+    //     if (req.query.status == 1)
+    //         where[Op.and] = [Sequelize.literal(`SUM(quantity) > 0 AND SUM(quantity) < dispatchOrderQuantity`)];
+    //     else if (req.query.status == 2)
+    //         where[Op.and] = [Sequelize.literal(`SUM(quantity) = dispatchOrderQuantity`)];
+    //     else
+    //         where[Op.and] = [Sequelize.literal(`SUM(quantity) = 0`)];
+    // }
+    if (req.query.search) where[Op.or] = ['$Product.name$', '$DispatchOrder.referenceId$', '$Warehouse.name$'].map(key => ({
         [key]: { [Op.like]: '%' + req.query.search + '%' }
     }));
 
     const response = await OutboundStat.findAndCountAll({
-        include: [{ model: DispatchOrder, include: [{ model: ProductOutward, include: [{ model: Vehicle }] }] }, { model: Product, include: [{ model: UOM }] }, { model: Warehouse }],
+        attributes: [
+            'referenceId', 'shipmentDate', 'internalIdForBusiness',
+            'dispatchOrderId', 'warehouse', 'customer', 'product', 'dispatchOrderQuantity',
+            [Sequelize.fn('sum', Sequelize.col('quantity')), 'outwardQuantity'],
+            ['dispatchOrderId', 'id'],
+            [Sequelize.fn('count', Sequelize.col('id')), 'outwardCount']
+        ],
         orderBy: [['createdAt', 'DESC']],
-        where, limit, offset
+        where, limit, offset,
+        group: ['dispatchOrderId']
     });
     res.json({
         success: true,
