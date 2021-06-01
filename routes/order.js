@@ -25,7 +25,7 @@ router.get('/', async (req, res, next) => {
     //     else
     //         where[Op.and] = [Sequelize.literal(`SUM(quantity) = 0`)];
     // }
-    if (req.query.search) where[Op.or] = ['$Product.name$', '$DispatchOrder.referenceId$', '$Warehouse.name$'].map(key => ({
+    if (req.query.search) where[Op.or] = ['product', 'referenceId', 'warehouse'].map(key => ({
         [key]: { [Op.like]: '%' + req.query.search + '%' }
     }));
 
@@ -47,6 +47,31 @@ router.get('/', async (req, res, next) => {
         data: response.rows,
         pages: Math.ceil(response.count / limit)
     });
+});
+
+
+router.get('/:id', async (req, res, next) => {
+    const limit = req.query.rowsPerPage || config.rowsPerPage;
+    const offset = (req.query.page - 1 || 0) * limit;
+    try {
+        let response = await DispatchOrder.findAndCountAll({
+            where: { id: req.params.id },
+            include: [{ model: ProductOutward, include: [{ model: Vehicle }] }]
+        });
+        return res.json({
+            success: true,
+            message: 'Product Outwards',
+            data: response.rows,
+            pages: Math.ceil(response.count / limit)
+        });
+    } catch (err) {
+        console.log(err.message)
+
+        return res.json({
+            success: false,
+            message: err.errors.pop().message
+        });
+    }
 });
 
 router.get('/relations', async (req, res, next) => {
