@@ -41,7 +41,6 @@ router.get('/', async (req, res, next) => {
         where, limit, offset,
         group: ['dispatchOrderId']
     });
-    console.log(response.count)
     res.json({
         success: true,
         message: 'respond with a resource',
