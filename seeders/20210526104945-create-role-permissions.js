@@ -7,14 +7,10 @@ module.exports = {
   up: async () => {
     let roles = await Role.bulkCreate([{
       name: 'Customer Super Admin',
-      type: 'CUSTOMER_SUPER_ADMIN',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      type: 'CUSTOMER_SUPER_ADMIN'
     }, {
       name: 'Customer Admin',
-      type: 'CUSTOMER_ADMIN',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      type: 'CUSTOMER_ADMIN'
     }]);
     const superAdminRole = roles.find(role => role.type == 'CUSTOMER_SUPER_ADMIN');
     const superAdminPermissions = await Permission.findAll({
@@ -42,7 +38,7 @@ module.exports = {
         }
       }
     });
-    const deletions = await PermissionAccess.destroy({
+    await PermissionAccess.destroy({
       where: {
         permissionId: { [Op.in]: permissions.map(perm => perm.id) },
         roleId: superAdminRole.id
