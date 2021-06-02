@@ -19,11 +19,11 @@ router.get('/', async (req, res, next) => {
     }
     // if ('status' in req.query) {
     //     if (req.query.status == 1)
-    //         where[Op.and] = [Sequelize.literal(`SUM(quantity) > 0 AND SUM(quantity) < dispatchOrderQuantity`)];
-    //     else if (req.query.status == 2)
-    //         where[Op.and] = [Sequelize.literal(`SUM(quantity) = dispatchOrderQuantity`)];
-    //     else
-    //         where[Op.and] = [Sequelize.literal(`SUM(quantity) = 0`)];
+    // where[Op.or] = [Sequelize.literal(`SUM(quantity) > 0 AND SUM(quantity) < dispatchOrderQuantity`)];
+    // else if (req.query.status == 2)
+    //     where[Op.and] = [Sequelize.literal(`SUM(quantity) = dispatchOrderQuantity`)];
+    // else
+    //     where[Op.and] = [Sequelize.literal(`SUM(quantity) = 0`)];
     // }
     if (req.query.search) where[Op.or] = ['product', 'referenceId', 'warehouse'].map(key => ({
         [key]: { [Op.like]: '%' + req.query.search + '%' }
@@ -74,6 +74,7 @@ router.get('/:id', async (req, res, next) => {
     const offset = (req.query.page - 1 || 0) * limit;
     try {
         let response = await DispatchOrder.findAndCountAll({
+
             where: { id: req.params.id },
             include: [{ model: ProductOutward, include: [{ model: Vehicle }] }]
         });
@@ -86,7 +87,7 @@ router.get('/:id', async (req, res, next) => {
     } catch (err) {
         return res.json({
             success: false,
-            message: err.errors.pop().message
+            message: err.message
         });
     }
 });
