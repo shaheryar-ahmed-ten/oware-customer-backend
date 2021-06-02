@@ -33,7 +33,16 @@ module.exports = (sequelize, DataTypes) => {
     warehouseId: DataTypes.INTEGER,
     vehicleId: DataTypes.INTEGER,
     productId: DataTypes.INTEGER,
+    productOutwardId: {
+      allowNull: true,
+      type: DataTypes.INTEGER
+    },
+    productOutwardQuantity: {
+      allowNull: true,
+      type: DataTypes.INTEGER
+    },
     dispatchOrderId: DataTypes.INTEGER,
+    dispatchOrderQuantity: DataTypes.INTEGER,
     product: DataTypes.STRING,
     weight: DataTypes.INTEGER,
     dimensionsCBM: DataTypes.INTEGER,

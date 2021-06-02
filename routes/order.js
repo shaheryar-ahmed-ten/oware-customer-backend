@@ -19,11 +19,11 @@ router.get('/', async (req, res, next) => {
     }
     // if ('status' in req.query) {
     //     if (req.query.status == 1)
-    //         where[Op.and] = [Sequelize.literal(`SUM(quantity) > 0 AND SUM(quantity) < dispatchOrderQuantity`)];
+    //         where[Op.and] = [Sequelize.literal(`SUM(productOutwardQuantity) > 0 AND SUM(productOutwardQuantity) < dispatchOrderQuantity`)];
     //     else if (req.query.status == 2)
-    //         where[Op.and] = [Sequelize.literal(`SUM(quantity) = dispatchOrderQuantity`)];
+    //         where[Op.and] = [Sequelize.literal(`SUM(productOutwardQuantity) = dispatchOrderQuantity`)];
     //     else
-    //         where[Op.and] = [Sequelize.literal(`SUM(quantity) = 0`)];
+    //         where[Op.and] = [Sequelize.literal(`SUM(productOutwardQuantity) = 0`)];
     // }
     if (req.query.search) where[Op.or] = ['product', 'referenceId', 'warehouse'].map(key => ({
         [key]: { [Op.like]: '%' + req.query.search + '%' }
@@ -33,9 +33,9 @@ router.get('/', async (req, res, next) => {
         attributes: [
             'referenceId', 'shipmentDate', 'internalIdForBusiness',
             'dispatchOrderId', 'warehouse', 'customer', 'product', 'dispatchOrderQuantity',
-            [Sequelize.fn('sum', Sequelize.col('quantity')), 'outwardQuantity'],
-            ['dispatchOrderId', 'id'],
-            [Sequelize.fn('count', Sequelize.col('id')), 'outwardCount']
+            [Sequelize.fn('sum', Sequelize.col('productOutwardQuantity')), 'outwardQuantity'],
+            ['dispatchOrderId', 'productOutwardId'],
+            [Sequelize.fn('count', Sequelize.col('productOutwardId')), 'outwardCount']
         ],
         orderBy: [['createdAt', 'DESC']],
         where, limit, offset,

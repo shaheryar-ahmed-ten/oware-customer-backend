@@ -4,8 +4,6 @@ const router = express.Router();
 const { User, Customer } = require('../models')
 const config = require('../config');
 const authService = require('../services/auth.service');
-const { Op } = require("sequelize");
-const { response } = require('express');
 
 /* POST user login. */
 router.post('/auth/login', async (req, res, next) => {
