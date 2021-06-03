@@ -74,6 +74,7 @@ router.get('/:id', async (req, res, next) => {
     const offset = (req.query.page - 1 || 0) * limit;
     try {
         let response = await DispatchOrder.findAndCountAll({
+
             where: { id: req.params.id },
             include: [{ model: ProductOutward, include: [{ model: Vehicle }] }]
         });
@@ -86,7 +87,7 @@ router.get('/:id', async (req, res, next) => {
     } catch (err) {
         return res.json({
             success: false,
-            message: err.errors.pop().message
+            message: err.message
         });
     }
 });
