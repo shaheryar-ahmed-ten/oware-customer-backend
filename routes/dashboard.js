@@ -9,30 +9,30 @@ router.get('/', async (req, res) => {
   const previousDate = moment().subtract(55, 'days');
   const whereClauseWithDate = dateKey => ({ customerId: req.companyId, [dateKey]: { [Op.between]: [previousDate, currentDate] } });
   const whereClauseWithoutDate = { customerId: req.companyId };
-  const counts = await ProductInward.findAndCountAll({ where });
 
+  console.log(whereClauseWithDate('createdAt'), whereClauseWithoutDate);
   const inboundStats = {
     total: await InboundStat.aggregate('id', 'count', {
-      where: whereClauseWithDate
+      where: whereClauseWithDate('createdAt')
     }),
     weight: await InboundStat.aggregate('weight', 'sum', {
-      where: whereClauseWithDate
+      where: whereClauseWithDate('createdAt')
     }),
     dimensionsCBM: await InboundStat.aggregate('dimensionsCBM', 'sum', {
-      where: whereClauseWithDate
+      where: whereClauseWithDate('createdAt')
     })
   }
 
   const outboundStats = {
     total: await OutboundStat.aggregate('id', 'count', {
       distinct: true,
-      where: whereClauseWithDate
+      where: whereClauseWithDate('createdAt')
     }),
     weight: await OutboundStat.aggregate('weight', 'sum', {
-      where: whereClauseWithDate
+      where: whereClauseWithDate('createdAt')
     }),
     dimensionsCBM: await OutboundStat.aggregate('dimensionsCBM', 'sum', {
-      where: whereClauseWithDate
+      where: whereClauseWithDate('createdAt')
     })
   }
 
@@ -50,7 +50,7 @@ router.get('/', async (req, res) => {
       (select dispatchOrderId as id,
         count(id) as totalOutwards,
         dispatchOrderQuantity > sum(productOutwardQuantity) as isPendingOrder
-        from OutboundStats group by dispatchOrderId)
+        from OutboundStats where customerId = ${req.companyId} group by dispatchOrderId)
         as orders where isPendingOrder = 1;
     `, {
       plain: true
