@@ -13,6 +13,8 @@ const userRouter = require('./routes/user');
 const dashboardRouter = require('./routes/dashboard');
 const inwardRouter = require('./routes/inward')
 const orderRouter = require('./routes/order')
+const productRouter = require('./routes/product')
+
 
 const app = express();
 
@@ -38,6 +40,7 @@ app.use('/api/v1/user', userRouter);
 app.use('/api/v1/dashboard', isLoggedIn, dashboardRouter);
 app.use('/api/v1/inward', isLoggedIn, inwardRouter);
 app.use('/api/v1/order', isLoggedIn, orderRouter);
+app.use('/api/v1/product', isLoggedIn, productRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
