@@ -48,6 +48,7 @@ router.get('/', async (req, res, next) => {
     success: true,
     message: 'respond with a resource',
     data: response.rows,
+    count: response.count.length,
     pages: Math.ceil(response.count.length / limit)
   });
 });
@@ -85,6 +86,7 @@ router.get('/:id', async (req, res, next) => {
       success: true,
       message: 'Product Outwards',
       data: response.rows,
+      count: response.count,
       pages: Math.ceil(response.count / limit)
     });
   } catch (err) {
