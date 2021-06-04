@@ -23,12 +23,17 @@ router.get('/', async (req, res, next) => {
             [Sequelize.fn('sum', Sequelize.col('availableQuantity')), 'availableQuantity']
         ], where, offset, limit, group: ['productId']
     })
+    const count = await Inventory.count({
+        distinct: true,
+        col: 'productId',
+        where
+    });
     res.json({
         success: true,
         message: 'respond with a resource',
         data: response,
-        count: response.length,
-        pages: Math.ceil(response.length / limit)
+        count: count,
+        pages: Math.ceil(count / limit)
     });
 });
 
