@@ -17,13 +17,13 @@ router.get('/', async (req, res, next) => {
 
     const response = await Inventory.findAndCountAll({
         include: [{ model: Product, attributes: ['name'], include: [{ model: Category, attributes: ['name'] }, { model: Brand, attributes: ['name'] }, { model: UOM, attributes: ['name'] }] }],
-        // attributes: [
-        //     ['productId', 'id'],
-        //     [Sequelize.fn('sum', Sequelize.col('committedQuantity')), 'committedQuantity'],
-        //     [Sequelize.fn('sum', Sequelize.col('availableQuantity')), 'availableQuantity']
-        // ],
+        attributes: [
+            ['productId', 'id'],
+            [Sequelize.fn('sum', Sequelize.col('committedQuantity')), 'committedQuantity'],
+            [Sequelize.fn('sum', Sequelize.col('availableQuantity')), 'availableQuantity']
+        ],
         where, offset, limit,
-        // group: ['productId']
+        group: ['productId']
     })
     const count = await Inventory.count({
         distinct: true,
