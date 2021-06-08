@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
       ProductInward.belongsTo(models.Warehouse, {
         foreignKey: 'warehouseId'
       });
-      ProductInward.belongsTo(models.Customer, {
+      ProductInward.belongsTo(models.Company, {
         foreignKey: 'customerId'
       });
     };

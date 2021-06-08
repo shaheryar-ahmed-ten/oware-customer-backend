@@ -1,9 +1,10 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
-const { User, Customer } = require('../models')
+const { User, Company, Role } = require('../models')
 const config = require('../config');
 const authService = require('../services/auth.service');
+const { APPS } = require('../enums');
 
 async function updateUser(req, res, next) {
   let user = await User.findOne({ where: { id: req.params.id } });
@@ -38,7 +39,7 @@ router.post('/auth/login', async (req, res, next) => {
   let loginKey = req.body.username.indexOf('@') > -1 ? 'email' : 'username';
   const user = await User.findOne({
     where: { [loginKey]: req.body.username },
-    include: [{ model: Customer, as: 'Company' }]
+    include: [{ model: Company, as: 'Company' }, Role]
   });
   if (!user)
     return res.status(401).json({
@@ -50,6 +51,11 @@ router.post('/auth/login', async (req, res, next) => {
     success: false,
     message: 'Invalid password!'
   });
+  if (user.Role.allowedApps.split(',').indexOf(APPS.CUSTOMER) < 0)
+    return res.status(401).json({
+      status: false,
+      message: 'Not allowed to enter customer portal'
+    });
   if (!user.companyId) return res.status(401).json({
     status: false,
     message: 'User is not assigned to any company!'

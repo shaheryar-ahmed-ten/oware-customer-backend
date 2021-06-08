@@ -6,6 +6,7 @@ const logger = require('morgan');
 const cors = require('cors');
 const fs = require('fs')
 
+const { PERMISSIONS } = require('./enums');
 const { isLoggedIn, checkPermission } = require('./services/auth.service');
 const { syncPermissions } = require('./services/permission.service');
 const indexRouter = require('./routes/index');
@@ -37,10 +38,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/v1/', indexRouter);
 app.use('/api/v1/user', userRouter);
-app.use('/api/v1/dashboard', isLoggedIn, dashboardRouter);
-app.use('/api/v1/inward', isLoggedIn, inwardRouter);
-app.use('/api/v1/order', isLoggedIn, orderRouter);
-app.use('/api/v1/product', isLoggedIn, productRouter);
+app.use('/api/v1/dashboard', isLoggedIn, checkPermission(PERMISSIONS.CP_DASHBOARD_FULL), dashboardRouter);
+app.use('/api/v1/inward', isLoggedIn, checkPermission(PERMISSIONS.CP_INWARD_FULL), inwardRouter);
+app.use('/api/v1/order', isLoggedIn, checkPermission(PERMISSIONS.CP_ORDER_FULL), orderRouter);
+app.use('/api/v1/product', isLoggedIn, checkPermission(PERMISSIONS.CP_PRODUCT_FULL), productRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
