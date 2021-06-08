@@ -11,17 +11,19 @@ router.get('/', async (req, res, next) => {
     let where = {
         customerId: req.companyId,
     };
-    if (req.query.search) where = ['product'].map(key => ({
+    if (req.query.search) where = ['$Product.name$'].map(key => ({
         [key]: { [Op.like]: '%' + req.query.search + '%' }
     }));
 
-    const response = await Inventory.findAll({
+    const response = await Inventory.findAndCountAll({
         include: [{ model: Product, attributes: ['name'], include: [{ model: Category, attributes: ['name'] }, { model: Brand, attributes: ['name'] }, { model: UOM, attributes: ['name'] }] }],
         attributes: [
             ['productId', 'id'],
             [Sequelize.fn('sum', Sequelize.col('committedQuantity')), 'committedQuantity'],
             [Sequelize.fn('sum', Sequelize.col('availableQuantity')), 'availableQuantity']
-        ], where, offset, limit, group: ['productId']
+        ],
+        where, offset, limit,
+        group: ['productId']
     })
     const count = await Inventory.count({
         distinct: true,
