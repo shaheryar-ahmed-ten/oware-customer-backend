@@ -101,7 +101,7 @@ router.patch('/me/password', authService.isLoggedIn, async (req, res, next) => {
   } catch (err) {
     return res.json({
       success: false,
-      message: err.errors.pop().message
+      message: err.message
     });
   }
 });

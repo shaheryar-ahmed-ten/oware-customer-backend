@@ -9,9 +9,9 @@ router.get('/', async (req, res, next) => {
     const limit = req.query.rowsPerPage || config.rowsPerPage;
     const offset = (req.query.page - 1 || 0) * limit;
     let where = {
-        customerId: req.companyId,
-    };
-    if (req.query.search) where = ['$Product.name$'].map(key => ({
+        customerId: req.companyId
+    }
+    if (req.query.search) where[Op.or] = ['$Product.name$', '$Product.id$'].map(key => ({
         [key]: { [Op.like]: '%' + req.query.search + '%' }
     }));
 
@@ -25,17 +25,12 @@ router.get('/', async (req, res, next) => {
         where, offset, limit,
         group: ['productId']
     })
-    const count = await Inventory.count({
-        distinct: true,
-        col: 'productId',
-        where
-    });
     res.json({
         success: true,
         message: 'respond with a resource',
         data: response,
-        count: count,
-        pages: Math.ceil(count / limit)
+        count: response.count.length,
+        pages: Math.ceil(response.count.length / limit)
     });
 });
 
