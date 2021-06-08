@@ -16,7 +16,6 @@ async function updateUser(req, res, next) {
   user.username = req.body.username;
   user.phone = req.body.phone;
   user.email = req.body.email;
-  if (req.body.password) user.password = req.body.password;
   user.isActive = req.body.isActive;
   try {
     const response = await user.save();
@@ -77,5 +76,34 @@ router.put('/me', authService.isLoggedIn, async (req, res, next) => {
   req.params.id = req.userId;
   return next()
 }, updateUser);
+
+router.patch('/me/password', authService.isLoggedIn, async (req, res, next) => {
+  req.params.id = req.userId;
+  let user = await User.findOne({ where: { id: req.params.id } });
+  if (!user) return res.status(400).json({
+    success: false,
+    message: 'No user found!'
+  });
+  let isPasswordValid = user.comparePassword(req.body.oldPassword);
+  if (!isPasswordValid) return res.status(401).json({
+    success: false,
+    message: 'Invalid Old Password!'
+  });
+  user.password = req.body.password;
+  try {
+    const response = await user.save();
+    response.password = undefined
+    return res.json({
+      success: true,
+      message: 'User updated',
+      data: response
+    });
+  } catch (err) {
+    return res.json({
+      success: false,
+      message: err.errors.pop().message
+    });
+  }
+});
 
 module.exports = router;
