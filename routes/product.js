@@ -11,7 +11,7 @@ router.get('/', async (req, res, next) => {
     let where = {
         customerId: req.companyId
     }
-    if (req.query.search) where[Op.or] = ['$Product.name$', '$Product.id$'].map(key => ({
+    if (req.query.search) where = ['$Product.name$'].map(key => ({
         [key]: { [Op.like]: '%' + req.query.search + '%' }
     }));
 
