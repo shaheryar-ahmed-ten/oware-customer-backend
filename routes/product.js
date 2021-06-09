@@ -15,7 +15,7 @@ router.get('/', async (req, res, next) => {
         [key]: { [Op.like]: '%' + req.query.search + '%' }
     }));
 
-    const response = await Inventory.findAndCountAll({
+    const response = await Inventory.findAll({
         include: [{ model: Product, attributes: ['name'], include: [{ model: Category, attributes: ['name'] }, { model: Brand, attributes: ['name'] }, { model: UOM, attributes: ['name'] }] }],
         attributes: [
             ['productId', 'id'],
@@ -25,12 +25,18 @@ router.get('/', async (req, res, next) => {
         where, offset, limit,
         group: ['productId']
     })
+    const count = await Inventory.count({
+        distinct: true,
+        include:[{model:Product}],
+        col: 'productId',
+        where
+    });
     res.json({
         success: true,
         message: 'respond with a resource',
         data: response,
-        count: response.count.length,
-        pages: Math.ceil(response.count.length / limit)
+        count,
+        pages: Math.ceil(count / limit)
     });
 });
 
