@@ -3,7 +3,7 @@ const router = express.Router();
 const moment = require('moment')
 const { ProductInward, Warehouse, Product, UOM, InboundStat } = require('../models')
 const config = require('../config');
-const { Op } = require('sequelize');
+const { Op, Sequelize } = require('sequelize');
 
 /* GET productInwards listing. */
 router.get('/', async (req, res, next) => {
@@ -20,6 +20,15 @@ router.get('/', async (req, res, next) => {
     if (req.query.search) where[Op.or] = ['$Product.name$', '$ProductInward.referenceId$', '$Warehouse.name$'].map(key => ({
         [key]: { [Op.like]: '%' + req.query.search + '%' }
     }));
+    if ('warehouse' in req.query) {
+        where = { 'warehouseId': req.query.warehouse }
+    }
+    if ('product' in req.query) {
+        where = { 'productId': req.query.product }
+    }
+    if ('referenceId' in req.query) {
+        where = { 'referenceId': req.query.referenceId }
+    }
 
     const response = await ProductInward.findAndCountAll({
         include: [{ model: Product, include: [{ model: UOM }] }, { model: Warehouse }],
@@ -38,13 +47,23 @@ router.get('/', async (req, res, next) => {
 router.get('/relations', async (req, res, next) => {
     const whereClauseWithoutDate = { customerId: req.companyId };
     const relations = {
-        warehouses: await InboundStat.aggregate('warehouse', 'distinct', {
+        warehouses: await InboundStat.findAll({
+            group: ['warehouseId'],
             plain: false,
-            where: whereClauseWithoutDate
+            where: whereClauseWithoutDate,
+            attributes: [
+                ['warehouseId', 'id'],
+                [Sequelize.col('warehouse'), 'name']
+            ]
         }),
-        products: await InboundStat.aggregate('product', 'distinct', {
+        products: await InboundStat.findAll({
+            group: ['productId'],
             plain: false,
-            where: whereClauseWithoutDate
+            where: whereClauseWithoutDate,
+            attributes: [
+                ['productId', 'id'],
+                [Sequelize.col('product'), 'name']
+            ]
         }),
     }
 
