@@ -10,7 +10,6 @@ router.get('/', async (req, res) => {
   const whereClauseWithDate = dateKey => ({ customerId: req.companyId, [dateKey]: { [Op.between]: [previousDate, currentDate] } });
   const whereClauseWithoutDate = { customerId: req.companyId };
 
-  console.log(whereClauseWithDate('createdAt'), whereClauseWithoutDate);
   const inboundStats = {
     total: await InboundStat.aggregate('id', 'count', {
       where: whereClauseWithDate('createdAt')
