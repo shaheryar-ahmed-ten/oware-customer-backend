@@ -9,8 +9,8 @@ router.get('/', async (req, res, next) => {
     const limit = req.query.rowsPerPage || config.rowsPerPage;
     const offset = (req.query.page - 1 || 0) * limit;
     let where = {
-        customerId: req.companyId
-    }
+        customerId: req.companyId,
+    };
     if (req.query.search) where = ['$Product.name$'].map(key => ({
         [key]: { [Op.like]: '%' + req.query.search + '%' }
     }));
@@ -27,7 +27,7 @@ router.get('/', async (req, res, next) => {
     })
     const count = await Inventory.count({
         distinct: true,
-        include:[{model:Product}],
+        include: [{ model: Product }],
         col: 'productId',
         where
     });
