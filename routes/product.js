@@ -14,6 +14,9 @@ router.get('/', async (req, res, next) => {
     if (req.query.search) where = ['$Product.name$'].map(key => ({
         [key]: { [Op.like]: '%' + req.query.search + '%' }
     }));
+    if ('product' in req.query) {
+        where = { 'productId': req.query.product }
+    }
 
     const response = await Inventory.findAll({
         include: [{ model: Product, attributes: ['name'], include: [{ model: Category, attributes: ['name'] }, { model: Brand, attributes: ['name'] }, { model: UOM, attributes: ['name'] }] }],
@@ -43,9 +46,14 @@ router.get('/', async (req, res, next) => {
 router.get('/relations', async (req, res, next) => {
     const whereClauseWithoutDate = { customerId: req.companyId };
     const relations = {
-        products: await OutboundStat.aggregate('product', 'distinct', {
+        products: await OutboundStat.findAll({
+            group: ['productId'],
             plain: false,
-            where: whereClauseWithoutDate
+            where: whereClauseWithoutDate,
+            attributes: [
+                ['productId', 'id'],
+                [Sequelize.col('product'), 'name']
+            ]
         }),
     }
 
