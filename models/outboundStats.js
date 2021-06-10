@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      OutboundStat.belongsTo(models.Customer, {
+      OutboundStat.belongsTo(models.Company, {
         foreignKey: 'customerId'
       });
       OutboundStat.belongsTo(models.Warehouse, {
