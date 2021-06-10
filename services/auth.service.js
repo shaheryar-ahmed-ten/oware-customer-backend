@@ -9,6 +9,7 @@ module.exports.isLoggedIn = (req, res, next) => {
     return res
       .status(401)
       .json({ success: false, message: 'No token provided.' });
+
   jwt.verify(token, config.JWT_SECRET, async (err, decoded) => {
     if (err)
       return res
@@ -25,15 +26,20 @@ module.exports.isLoggedIn = (req, res, next) => {
         },
       ],
     });
-    if (!user)
-      return res
-        .status(401)
-        .json({ status: false, message: "User doesn't exist" });
-    else if (!user.isActive)
-      return res
-        .status(401)
-        .json({ status: false, message: 'User is inactive' });
+    if (!user) return res.status(401).json({
+      status: false,
+      message: "User doesn't exist"
+    });
+    if (!user.isActive) return res.status(401).json({
+      status: false,
+      message: 'User is inactive'
+    });
+    if (!user.companyId) return res.status(401).json({
+      status: false,
+      message: 'User is not assigned to any company!'
+    });
     req.userId = decoded.id;
+    req.companyId = user.companyId;
     user.password = undefined
     req.user = user;
     return next();
@@ -41,17 +47,19 @@ module.exports.isLoggedIn = (req, res, next) => {
 };
 
 module.exports.isSuperAdmin = (req, res, next) => {
-  if (
-    req.user.Role.PermissionAccesses.find(
-      (permissionAccess) =>
-        permissionAccess.Permission.type == 'superadmin_privileges'
-    )
-  )
+  if (req.user.Role.type == 'SUPER_ADMIN')
     if (next) next();
     else return true;
   else if (next)
-    res
-      .status(401)
-      .json({ status: false, message: 'Operation not permitted!' });
+    res.status(401).json({ status: false, message: 'Operation not permitted!' });
+  else return false;
+};
+
+module.exports.checkPermission = permission => (req, res, next) => {
+  if (req.user.Role.PermissionAccesses.find((permissionAccess) => permissionAccess.Permission.type == permission))
+    if (next) next();
+    else return true;
+  else if (next)
+    res.status(401).json({ status: false, message: 'Operation not permitted!' });
   else return false;
 };
