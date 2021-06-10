@@ -6,11 +6,10 @@ const { Op, where } = require('sequelize');
 
 router.get('/', async (req, res) => {
   const currentDate = moment();
-  const previousDate = moment().subtract(55, 'days');
+  const previousDate = moment().subtract(7, 'days');
   const whereClauseWithDate = dateKey => ({ customerId: req.companyId, [dateKey]: { [Op.between]: [previousDate, currentDate] } });
   const whereClauseWithoutDate = { customerId: req.companyId };
 
-  console.log(whereClauseWithDate('createdAt'), whereClauseWithoutDate);
   const inboundStats = {
     total: await InboundStat.aggregate('id', 'count', {
       where: whereClauseWithDate('createdAt')

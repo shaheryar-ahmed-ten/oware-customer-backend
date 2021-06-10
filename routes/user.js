@@ -86,12 +86,12 @@ router.put('/me', authService.isLoggedIn, async (req, res, next) => {
 router.patch('/me/password', authService.isLoggedIn, async (req, res, next) => {
   req.params.id = req.userId;
   let user = await User.findOne({ where: { id: req.params.id } });
-  if (!user) return res.status(400).json({
+  if (!user) return res.json({
     success: false,
     message: 'No user found!'
   });
   let isPasswordValid = user.comparePassword(req.body.oldPassword);
-  if (!isPasswordValid) return res.status(401).json({
+  if (!isPasswordValid) return res.json({
     success: false,
     message: 'Invalid Old Password!'
   });
@@ -101,13 +101,13 @@ router.patch('/me/password', authService.isLoggedIn, async (req, res, next) => {
     response.password = undefined
     return res.json({
       success: true,
-      message: 'User updated',
+      message: 'Password Updated',
       data: response
     });
   } catch (err) {
     return res.json({
       success: false,
-      message: err.errors.pop().message
+      message: err.message
     });
   }
 });
