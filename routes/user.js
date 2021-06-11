@@ -1,10 +1,13 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
-const { User, Company, Role } = require('../models')
+const { User, Company, Role, VerificationCode } = require('../models')
+const { sendForgotPasswordOTPEmail } = require('../services/mailer.service');
+const { generateOTP } = require('../services/common.services');
 const config = require('../config');
 const authService = require('../services/auth.service');
 const { APPS } = require('../enums');
+const moment = require('moment');
 
 async function updateUser(req, res, next) {
   let user = await User.findOne({ where: { id: req.params.id } });
@@ -110,6 +113,61 @@ router.patch('/me/password', authService.isLoggedIn, async (req, res, next) => {
       message: err.message
     });
   }
+});
+
+/* POST forgot password. */
+router.post('/auth/forgot-password', async (req, res, next) => {
+  const user = await User.findOne({ where: { email: req.body.email } });
+  if (!user) return res.status(400).json({
+    success: false,
+    message: 'User doesn\'t exist with this email number'
+  });
+  if (!user.isActive) return res.status(400).json({
+    success: false,
+    message: 'User is inactive'
+  });
+  const otp = generateOTP();
+  await VerificationCode.create({
+    userId: user.id,
+    code: otp,
+    identity: req.body.email,
+    expiryDate: moment().add(1, 'hour').toDate()
+  });
+
+  sendForgotPasswordOTPEmail({
+    email: req.body.email, otp,
+    name: `${user.firstName} ${user.lastName}`
+  });
+  return res.json({
+    success: true,
+    message: 'Forgot password email sent!'
+  });
+});
+
+/* POST update password. */
+router.post('/auth/change-password', async (req, res, next) => {
+  const user = await User.findOne({ where: { email: req.body.email } });
+  if (!user) return res.status(400).json({
+    success: false,
+    message: 'User doesn\'t exist with this email'
+  });
+  if (!user.isActive) return res.status(400).json({
+    success: false,
+    message: 'User is inactive'
+  });
+  let code = await VerificationCode.findOne({ where: { code: req.body.code, identity: req.body.email } });
+
+  if (!code) return res.status(401).json({
+    success: false,
+    message: 'Invalid otp'
+  })
+  user.password = req.body.password;
+  user.save();
+  await VerificationCode.destroy({ where: { code: req.body.code, identity: req.body.email } });
+  return res.json({
+    success: true,
+    message: 'Password updated!'
+  });
 });
 
 module.exports = router;

@@ -31,4 +31,16 @@ async function sendMail(payload) {
   return response;
 }
 
-module.exports = {};
+function sendForgotPasswordOTPEmail({ email, otp, name }) {
+  let forgotPasswordTemplate = fs.readFileSync('templates/forgot-password.html', { encoding: 'utf-8' });
+  let html = ejs.render(forgotPasswordTemplate, { otp, name });
+  return sendMail({
+    to: email,
+    from: process.env.MAILER_EMAIL,
+    senderName: 'Forgot Password',
+    subject: 'Recover Password',
+    html
+  });
+}
+
+module.exports = { sendForgotPasswordOTPEmail };
