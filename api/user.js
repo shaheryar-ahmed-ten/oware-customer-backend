@@ -130,13 +130,14 @@ router.post('/auth/forgot-password', async (req, res, next) => {
   await VerificationCode.create({
     userId: user.id,
     code: otp,
-    identity: req.body.email,
+    identity: user.id,
     expiryDate: moment().add(1, 'hour').toDate()
   });
 
   sendForgotPasswordOTPEmail({
     email: req.body.email, otp,
-    name: `${user.firstName} ${user.lastName}`
+    name: `${user.firstName} ${user.lastName}`,
+    link: `${req.get('referrer')}forgot-password/change-password/${user.id}/${otp}`
   });
   return res.json({
     success: true,
@@ -145,8 +146,8 @@ router.post('/auth/forgot-password', async (req, res, next) => {
 });
 
 /* POST update password. */
-router.post('/auth/change-password', async (req, res, next) => {
-  const user = await User.findOne({ where: { email: req.body.email } });
+router.post('/auth/change-password/:id/:otp', async (req, res, next) => {
+  const user = await User.findOne({ where: { id: req.params.id } });
   if (!user) return res.status(400).json({
     success: false,
     message: 'User doesn\'t exist with this email'
@@ -155,15 +156,14 @@ router.post('/auth/change-password', async (req, res, next) => {
     success: false,
     message: 'User is inactive'
   });
-  let code = await VerificationCode.findOne({ where: { code: req.body.code, identity: req.body.email } });
-
+  let code = await VerificationCode.findOne({ where: { code: req.params.otp, identity: req.params.id } });
   if (!code) return res.status(401).json({
     success: false,
     message: 'Invalid otp'
   })
   user.password = req.body.password;
   user.save();
-  await VerificationCode.destroy({ where: { code: req.body.code, identity: req.body.email } });
+  await VerificationCode.destroy({ where: { identity: req.params.id } });
   return res.json({
     success: true,
     message: 'Password updated!'
