@@ -11,9 +11,11 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      PermissionAccess.hasOne(models.Permission, {
-        sourceKey: 'roleId',
-        foreignKey: 'id'
+      PermissionAccess.belongsTo(models.Permission, {
+        foreignKey: 'permissionId'
+      });
+      PermissionAccess.belongsTo(models.Role, {
+        foreignKey: 'roleId'
       });
     }
   };
