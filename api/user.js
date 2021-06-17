@@ -26,7 +26,7 @@ async function updateUser(req, res, next) {
     response.password = undefined
     return res.json({
       success: true,
-      message: 'User updated',
+      message: 'Your profile data updated successfully',
       data: response
     });
   } catch (err) {
@@ -104,7 +104,7 @@ router.patch('/me/password', authService.isLoggedIn, async (req, res, next) => {
     response.password = undefined
     return res.json({
       success: true,
-      message: 'Password Updated',
+      message: 'Your profile data updated successfully',
       data: response
     });
   } catch (err) {
@@ -166,7 +166,7 @@ router.post('/auth/change-password/:id/:otp', async (req, res, next) => {
   await VerificationCode.destroy({ where: { identity: req.params.id } });
   return res.json({
     success: true,
-    message: 'Password updated!'
+    message: 'Your profile data updated successfully'
   });
 });
 
