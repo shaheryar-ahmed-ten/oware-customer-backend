@@ -21,13 +21,13 @@ router.get('/', async (req, res, next) => {
         [key]: { [Op.like]: '%' + req.query.search + '%' }
     }));
     if ('warehouse' in req.query) {
-        where = { 'warehouseId': req.query.warehouse }
+        where['warehouseId'] = req.query.warehouse;
     }
     if ('product' in req.query) {
-        where = { 'productId': req.query.product }
+        where['productId'] = req.query.product;
     }
     if ('referenceId' in req.query) {
-        where = { 'referenceId': req.query.referenceId }
+        where['referenceId'] = req.query.referenceId;
     }
 
     const response = await ProductInward.findAndCountAll({

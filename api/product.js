@@ -15,7 +15,7 @@ router.get('/', async (req, res, next) => {
         [key]: { [Op.like]: '%' + req.query.search + '%' }
     }));
     if ('product' in req.query) {
-        where = { 'productId': req.query.product }
+        where['productId'] = req.query.product;
     }
 
     const response = await Inventory.findAll({

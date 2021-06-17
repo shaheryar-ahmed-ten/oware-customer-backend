@@ -28,14 +28,14 @@ router.get('/', async (req, res, next) => {
       having = Sequelize.literal(`sum(productOutwardQuantity) = dispatchOrderQuantity`);
   }
 
-  if('warehouse' in req.query){
-    where = {'warehouseId':req.query.warehouse}
+  if ('warehouse' in req.query) {
+    where['warehouseId'] = req.query.warehouse;
   }
-  if('product' in req.query){
-    where = {'productId':req.query.product}
+  if ('product' in req.query) {
+    where['productId'] = req.query.product;
   }
-  if('referenceId' in req.query){
-    where = {'referenceId':req.query.referenceId}
+  if ('referenceId' in req.query) {
+    where['referenceId'] = req.query.referenceId;
   }
 
   if (req.query.search) where[Op.or] = ['product', 'referenceId', 'warehouse'].map(key => ({
@@ -71,16 +71,17 @@ router.get('/relations', async (req, res, next) => {
       plain: false,
       where: whereClauseWithoutDate,
       attributes: [
-          ['warehouseId', 'id'],
-          [Sequelize.col('warehouse'), 'name']
-      ]}),
+        ['warehouseId', 'id'],
+        [Sequelize.col('warehouse'), 'name']
+      ]
+    }),
     products: await OutboundStat.findAll({
       group: ['productId'],
       plain: false,
       where: whereClauseWithoutDate,
       attributes: [
-          ['productId', 'id'],
-          [Sequelize.col('product'), 'name']
+        ['productId', 'id'],
+        [Sequelize.col('product'), 'name']
       ]
     }),
   }

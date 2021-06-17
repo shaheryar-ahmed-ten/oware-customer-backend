@@ -8,7 +8,11 @@ router.get('/', async (req, res) => {
   const currentDate = moment();
   const previousDate = moment().subtract(7, 'days');
   const whereClauseWithDate = dateKey => ({ customerId: req.companyId, [dateKey]: { [Op.between]: [previousDate, currentDate] } });
-  const whereClauseWithoutDate = { customerId: req.companyId };
+  const whereClauseWithoutDate = {
+    customerId: req.companyId, availableQuantity: {
+      [Op.ne]: 0
+    }
+  };
 
   const inboundStats = {
     total: await InboundStat.aggregate('id', 'count', {
