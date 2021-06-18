@@ -50,7 +50,7 @@ router.get('/', async (req, res, next) => {
       ['dispatchOrderId', 'productOutwardId'],
       [Sequelize.fn('count', Sequelize.col('productOutwardId')), 'outwardCount']
     ],
-    orderBy: [['createdAt', 'DESC']],
+    order: [['createdAt', 'DESC']],
     where, limit, offset, having,
     group: ['dispatchOrderId', 'dispatchOrderQuantity', 'warehouse', 'customer', 'product']
   });

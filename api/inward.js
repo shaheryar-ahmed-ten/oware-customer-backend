@@ -32,7 +32,7 @@ router.get('/', async (req, res, next) => {
 
     const response = await ProductInward.findAndCountAll({
         include: [{ model: Product, include: [{ model: UOM }] }, { model: Warehouse }],
-        orderBy: [['createdAt', 'DESC']],
+        order: [['createdAt', 'DESC']],
         where, limit, offset
     });
     res.json({

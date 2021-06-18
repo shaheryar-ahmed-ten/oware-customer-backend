@@ -82,7 +82,7 @@ router.get('/:id', async (req, res, next) => {
                 'name'
             ]
         }],
-        orderBy: [['createdAt', 'DESC']],
+        order: [['createdAt', 'DESC']],
         where, limit, offset,
     });
     res.json({
