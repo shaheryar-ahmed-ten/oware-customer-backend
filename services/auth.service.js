@@ -1,6 +1,7 @@
 const { User, Role, PermissionAccess, Permission } = require('../models');
 const jwt = require('jsonwebtoken');
 const config = require('../config');
+const { ROLES, APPS } = require('../enums');
 
 module.exports.isLoggedIn = (req, res, next) => {
   let token = req.headers['authorization'];

@@ -1,9 +1,7 @@
 'use strict';
 const { Model } = require('sequelize');
-const { APPS } = require('../enums');
-
 module.exports = (sequelize, DataTypes) => {
-  class Permission extends Model {
+  class VerificationCode extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -11,24 +9,30 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      VerificationCode.belongsTo(models.User, {
+        foreignKey: 'userId'
+      });
     }
   };
-  Permission.init({
-    type: {
-      type: DataTypes.STRING,
-      unique: true
+  VerificationCode.init({
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      validate: { notEmpty: true }
     },
-    name: DataTypes.STRING,
-    allowedApps: {
-      type: DataTypes.ENUM({
-        values: Object.keys(APPS)
-      }),
+    identity: {
+      type: DataTypes.STRING,
       allowNull: false
-    }
+    },
+    code: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    expiryDate: DataTypes.DATE
   }, {
     sequelize,
     paranoid: true,
-    modelName: 'Permission',
+    modelName: 'VerificationCode',
   });
-  return Permission;
+  return VerificationCode;
 };

@@ -6,13 +6,8 @@ const logger = require('morgan');
 const cors = require('cors');
 const fs = require('fs')
 
-const { isLoggedIn, checkPermission } = require('./services/auth.service');
 const { syncPermissions } = require('./services/permission.service');
-const indexRouter = require('./routes/index');
-const userRouter = require('./routes/user');
-const dashboardRouter = require('./routes/dashboard');
-const inwardRouter = require('./routes/inward')
-const orderRouter = require('./routes/order')
+const apiRouter = require('./api');
 
 const app = express();
 
@@ -31,13 +26,14 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/api/v1/', indexRouter);
-app.use('/api/v1/user', userRouter);
-app.use('/api/v1/dashboard', isLoggedIn, dashboardRouter);
-app.use('/api/v1/inward', isLoggedIn, inwardRouter);
-app.use('/api/v1/order', isLoggedIn, orderRouter);
+app.use('/api/v1/', apiRouter);
+
+// Serve static files for frontend
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('/*', function (req, res) {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

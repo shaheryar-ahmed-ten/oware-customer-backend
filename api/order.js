@@ -28,6 +28,16 @@ router.get('/', async (req, res, next) => {
       having = Sequelize.literal(`sum(productOutwardQuantity) = dispatchOrderQuantity`);
   }
 
+  if('warehouse' in req.query){
+    where = {'warehouseId':req.query.warehouse}
+  }
+  if('product' in req.query){
+    where = {'productId':req.query.product}
+  }
+  if('referenceId' in req.query){
+    where = {'referenceId':req.query.referenceId}
+  }
+
   if (req.query.search) where[Op.or] = ['product', 'referenceId', 'warehouse'].map(key => ({
     [key]: { [Op.like]: '%' + req.query.search + '%' }
   }));
@@ -56,13 +66,22 @@ router.get('/', async (req, res, next) => {
 router.get('/relations', async (req, res, next) => {
   const whereClauseWithoutDate = { customerId: req.companyId };
   const relations = {
-    warehouses: await OutboundStat.aggregate('warehouse', 'distinct', {
+    warehouses: await OutboundStat.findAll({
+      group: ['warehouseId'],
       plain: false,
-      where: whereClauseWithoutDate
-    }),
-    products: await OutboundStat.aggregate('product', 'distinct', {
+      where: whereClauseWithoutDate,
+      attributes: [
+          ['warehouseId', 'id'],
+          [Sequelize.col('warehouse'), 'name']
+      ]}),
+    products: await OutboundStat.findAll({
+      group: ['productId'],
       plain: false,
-      where: whereClauseWithoutDate
+      where: whereClauseWithoutDate,
+      attributes: [
+          ['productId', 'id'],
+          [Sequelize.col('product'), 'name']
+      ]
     }),
   }
 

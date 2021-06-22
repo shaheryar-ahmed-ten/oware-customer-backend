@@ -17,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
       Inventory.belongsTo(models.Warehouse, {
         foreignKey: 'warehouseId'
       });
-      Inventory.belongsTo(models.Customer, {
+      Inventory.belongsTo(models.Company, {
         foreignKey: 'customerId'
       });
       Inventory.hasMany(models.DispatchOrder, {
@@ -45,7 +45,7 @@ module.exports = (sequelize, DataTypes) => {
     customerId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      validate: { notEmpty: { msg: 'Customer cannot be empty' } }
+      validate: { notEmpty: { msg: 'Company cannot be empty' } }
 
     },
     warehouseId: {

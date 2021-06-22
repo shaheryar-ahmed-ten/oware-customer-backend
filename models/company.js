@@ -1,10 +1,10 @@
 'use strict';
 const { Model } = require('sequelize');
-const bcrypt = require('bcrypt');
 const config = require('../config');
+const { APPS } = require('../enums');
 
 module.exports = (sequelize, DataTypes) => {
-  class Customer extends Model {
+  class Company extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -12,20 +12,20 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      Customer.belongsTo(models.User, {
+      Company.belongsTo(models.User, {
         foreignKey: 'userId'
       });
-      Customer.belongsTo(models.User, {
+      Company.belongsTo(models.User, {
         foreignKey: 'contactId',
         as: 'Contact'
       });
-      Customer.hasMany(models.User, {
+      Company.hasMany(models.User, {
         foreignKey: 'companyId',
         as: 'Employees'
       });
     };
   };
-  Customer.init({
+  Company.init({
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -42,10 +42,17 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       validate: { notEmpty: { msg: 'Please select a contact' } }
     },
-    companyName: {
+    name: {
       type: DataTypes.STRING,
       allowNull: false,
       validate: { notEmpty: { msg: 'Please enter company name' } }
+    },
+    allowedApps: {
+      type: DataTypes.ENUM({
+        values: Object.keys(APPS)
+      }),
+      allowNull: false,
+      defaultValue: APPS.CUSTOMER
     },
     notes: DataTypes.STRING,
     isActive: {
@@ -55,8 +62,8 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     paranoid: true,
-    modelName: 'Customer',
+    modelName: 'Company',
   });
 
-  return Customer;
+  return Company;
 };
