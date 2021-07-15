@@ -31,7 +31,16 @@ router.get('/', async (req, res, next) => {
     }
 
     const response = await ProductInward.findAndCountAll({
-        include: [{ model: Product, include: [{ model: UOM }] }, { model: Warehouse }],
+        include: [{
+            model: Product,
+            include: [{ model: UOM }]
+        }, {
+            model: Product,
+            as: 'Products',
+            include: [{ model: UOM }]
+        }, {
+            model: Warehouse
+        }],
         order: [['createdAt', 'DESC']],
         where, limit, offset
     });
@@ -56,14 +65,28 @@ router.get('/relations', async (req, res, next) => {
                 [Sequelize.col('warehouse'), 'name']
             ]
         }),
-        products: await InboundStat.findAll({
+        inward: await ProductInward.findAll({
+            where: whereClauseWithoutDate,
+            include: [{
+                model: Product,
+                as: 'Products',
+                //attributes: [[sequelize.literal('DISTINCT()', 'products')]] 
+            },
+            ],
+            attributes: [
+                //  [sequelize.literal('COUNT(`circuits`.duration * `circuit->circuitSteps`.repeatCount'), 'total']
+                ['productId', 'id']
+            ],
+            group: ['Product.name']
+        }),
+        products: await ProductInward.findAll({
             group: ['productId'],
             plain: false,
             where: whereClauseWithoutDate,
             attributes: [
                 ['productId', 'id'],
                 [Sequelize.col('product'), 'name']
-            ]
+            ],
         }),
     }
 
