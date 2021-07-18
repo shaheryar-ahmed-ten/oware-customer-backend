@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const moment = require('moment')
-const { ProductInward, Warehouse, Product, UOM, InboundStat } = require('../models')
+const { ProductInward, Warehouse, Product, UOM, InboundStat, Inventory } = require('../models')
 const config = require('../config');
 const { Op, Sequelize } = require('sequelize');
 
@@ -55,6 +55,11 @@ router.get('/', async (req, res, next) => {
 
 router.get('/relations', async (req, res, next) => {
     const whereClauseWithoutDate = { customerId: req.companyId };
+    const whereClauseWithoutDateAndQuantity = {
+        customerId: req.companyId, availableQuantity: {
+          [Op.ne]: 0
+        }
+      }
     const relations = {
         warehouses: await InboundStat.findAll({
             group: ['warehouseId'],
@@ -65,28 +70,12 @@ router.get('/relations', async (req, res, next) => {
                 [Sequelize.col('warehouse'), 'name']
             ]
         }),
-        inward: await ProductInward.findAll({
-            where: whereClauseWithoutDate,
-            include: [{
-                model: Product,
-                as: 'Products',
-                //attributes: [[sequelize.literal('DISTINCT()', 'products')]] 
-            },
-            ],
-            attributes: [
-                //  [sequelize.literal('COUNT(`circuits`.duration * `circuit->circuitSteps`.repeatCount'), 'total']
-                ['productId', 'id']
-            ],
-            group: ['Product.name']
-        }),
-        products: await ProductInward.findAll({
-            group: ['productId'],
-            plain: false,
-            where: whereClauseWithoutDate,
-            attributes: [
-                ['productId', 'id'],
-                [Sequelize.col('product'), 'name']
-            ],
+
+        products: await Inventory.aggregate('productId', 'DISTINCT',
+            {
+                plain: false,
+                include: [{ model: Product, attributes: ['name'] }],
+                where: whereClauseWithoutDateAndQuantity
         }),
     }
 

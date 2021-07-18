@@ -44,17 +44,18 @@ router.get('/', async (req, res, next) => {
 });
 
 router.get('/relations', async (req, res, next) => {
-    const whereClauseWithoutDate = { customerId: req.companyId };
+    const whereClauseWithoutDate = {
+        customerId: req.companyId, availableQuantity: {
+          [Op.ne]: 0
+        }
+      }
     const relations = {
-        products: await InboundStat.findAll({
-            group: ['productId'],
-            plain: false,
-            where: whereClauseWithoutDate,
-            attributes: [
-                ['productId', 'id'],
-                [Sequelize.col('product'), 'name']
-            ]
-        }),
+        products: await Inventory.aggregate('productId', 'DISTINCT',
+            {
+                plain: false,
+                include: [{ model: Product, attributes: ['name'] }],
+                where: whereClauseWithoutDate
+        })
     }
 
     res.json({

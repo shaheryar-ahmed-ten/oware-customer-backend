@@ -1,12 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const moment = require('moment')
-const { Inventory, ProductInward, OutboundStat, InboundStat, sequelize } = require('../models')
+const { Inventory, ProductInward, OutboundStat, InboundStat, InwardGroup, Product, sequelize, Sequelize } = require('../models')
 const { Op, where } = require('sequelize');
+moment.prototype.toMySqlDateTime = function () {
+  return this.format('YYYY-MM-DD HH:mm:ss');
+};
 
 router.get('/', async (req, res) => {
-  const currentDate = moment();
+  const currentDate = moment().format("YYYY-MM-DD HH:mm:ss");;
   const previousDate = moment().subtract(7, 'days');
+  const formattedPreviousDate = previousDate.format("YYYY-MM-DD HH:mm:ss");
   const whereClauseWithDate = dateKey => ({ customerId: req.companyId, [dateKey]: { [Op.between]: [previousDate, currentDate] } });
   const whereClauseWithoutDate = {
     customerId: req.companyId, availableQuantity: {
@@ -18,12 +22,16 @@ router.get('/', async (req, res) => {
     total: await InboundStat.aggregate('id', 'count', {
       where: whereClauseWithDate('createdAt')
     }),
-    weight: await InboundStat.aggregate('weight', 'sum', {
-      where: whereClauseWithDate('createdAt')
-    }),
-    dimensionsCBM: await InboundStat.aggregate('dimensionsCBM', 'sum', {
-      where: whereClauseWithDate('createdAt')
-    })
+    ...(await sequelize.query(`
+    select sum(weight*InwardGroups.quantity) as weight,
+    sum(dimensionsCBM*InwardGroups.quantity) as dimensionsCBM 
+    from InwardGroups 
+    join ProductInwards as ProductInwards on inwardId = ProductInwards.id 
+    join Products as Products on Products.id = InwardGroups.productId where customerId = ${req.companyId} 
+    and (ProductInwards.createdAt BETWEEN '${formattedPreviousDate}' AND '${currentDate}') 
+    `, {
+      plain: true
+    }))
   }
 
   const outboundStats = {
