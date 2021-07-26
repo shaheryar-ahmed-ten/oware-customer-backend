@@ -27,6 +27,8 @@ module.exports.isLoggedIn = (req, res, next) => {
         },
       ],
     });
+    console.log("user.Role.PermissionAccesses",user.Role.PermissionAccesses)
+    // user.Role.permissionAccesses.map(i => console.log("item",i))
     if (!user) return res.status(401).json({
       status: false,
       message: "User doesn't exist"
