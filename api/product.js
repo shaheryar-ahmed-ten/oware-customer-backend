@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Warehouse, Product, UOM, Inventory, Category, Brand, InboundStat } = require('../models')
+const { Warehouse, Product, UOM, Inventory, Category, Brand, InboundStat, sequelize } = require('../models')
 const config = require('../config');
 const { Op, Sequelize } = require('sequelize');
 
@@ -50,12 +50,9 @@ router.get('/relations', async (req, res, next) => {
         }
       }
     const relations = {
-        products: await Inventory.aggregate('productId', 'DISTINCT',
-            {
-                plain: false,
-                include: [{ model: Product, attributes: ['name'] }],
-                where: whereClauseWithoutDate
-        })
+        products: await sequelize.query(`select distinct productId, product.name as productName 
+        from Inventories join Products as product on product.id = Inventories.productId 
+        where customerId = ${req.companyId} and availableQuantity != 0;`)
     }
 
     res.json({
