@@ -52,7 +52,7 @@ router.get('/relations', async (req, res, next) => {
     const relations = {
         products: await sequelize.query(`select distinct productId, product.name as productName 
         from Inventories join Products as product on product.id = Inventories.productId 
-        where customerId = ${req.companyId} and availableQuantity != 0;`)
+        where customerId = ${req.companyId} and availableQuantity != 0;`,{ type: Sequelize.QueryTypes.SELECT })
     }
 
     res.json({
