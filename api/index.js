@@ -24,6 +24,6 @@ router.use('/dashboard', isLoggedIn, checkPermission(PERMISSIONS.CP_DASHBOARD_FU
 router.use('/inward', isLoggedIn, checkPermission(PERMISSIONS.CP_INWARD_FULL), inwardRouter);
 router.use('/order', isLoggedIn, checkPermission(PERMISSIONS.CP_ORDER_FULL), orderRouter);
 router.use('/product', isLoggedIn, checkPermission(PERMISSIONS.CP_PRODUCT_FULL), productRouter);
-router.use("/ride",rideRouter)
+router.use("/ride", isLoggedIn, checkPermission(PERMISSIONS.CP_RIDE_FULL),rideRouter)
 
 module.exports = router;
