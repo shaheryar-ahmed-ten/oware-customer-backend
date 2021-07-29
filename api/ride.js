@@ -1,7 +1,20 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
-const { User, Company, Role, VerificationCode, Ride, RideProduct, Area, Zone, City, Vehicle, Car, Category } = require("../models");
+const {
+  User,
+  Company,
+  Role,
+  VerificationCode,
+  Ride,
+  RideProduct,
+  Area,
+  Zone,
+  City,
+  Vehicle,
+  Car,
+  Category
+} = require("../models");
 const { sendForgotPasswordOTPEmail } = require("../services/mailer.service");
 const { generateOTP } = require("../services/common.services");
 const config = require("../config");
@@ -13,7 +26,7 @@ const moment = require("moment");
 router.get("/", async (req, res, next) => {
   const limit = req.query.rowsPerPage || config.rowsPerPage;
   const offset = (req.query.page - 1 || 0) * limit;
-  let where = {};
+  let where = { customerId: req.user.id };
   if (req.query.search)
     where[Op.or] = [
       "$PickupArea.name$",
@@ -36,7 +49,6 @@ router.get("/", async (req, res, next) => {
     limit,
     offset
   });
-  console.log("res", response);
   res.json({
     success: true,
     message: "respond with a resource",
@@ -56,7 +68,7 @@ router.get("/:id", async (req, res, next) => {
       }
     ],
     order: [["updatedAt", "DESC"]],
-    where: { id: req.params.id },
+    where: { id: req.params.id, customerId: req.user.id },
     include: [
       {
         model: RideProduct,
@@ -72,7 +84,6 @@ router.get("/:id", async (req, res, next) => {
       }
     ]
   });
-  console.log("res", res);
 
   res.json({
     success: true,
