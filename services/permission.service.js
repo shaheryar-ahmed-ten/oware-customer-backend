@@ -9,7 +9,6 @@ async function syncPermissions() {
     (acc, perm) => [...acc, ...(perm in permissionsInDBAsObject ? [] : [{ type: perm, name: permissions[perm] }])],
     []
   );
-  console.log("newPerm", newPermissions);
   return await Permission.bulkCreate(newPermissions);
 }
 

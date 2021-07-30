@@ -24,9 +24,10 @@ const moment = require("moment");
 
 /* GET rides listing. */
 router.get("/", async (req, res, next) => {
+  console.log("req.user", req.user);
   const limit = req.query.rowsPerPage || config.rowsPerPage;
   const offset = (req.query.page - 1 || 0) * limit;
-  let where = { customerId: req.user.id };
+  let where = { customerId: req.user.companyId };
   if (req.query.search)
     where[Op.or] = [
       "$PickupArea.name$",
@@ -68,7 +69,7 @@ router.get("/:id", async (req, res, next) => {
       }
     ],
     order: [["updatedAt", "DESC"]],
-    where: { id: req.params.id, customerId: req.user.id },
+    where: { id: req.params.id, customerId: req.user.companyId },
     include: [
       {
         model: RideProduct,
