@@ -57,9 +57,9 @@ router.get('/relations', async (req, res, next) => {
     const whereClauseWithoutDate = { customerId: req.companyId };
     const whereClauseWithoutDateAndQuantity = {
         customerId: req.companyId, availableQuantity: {
-          [Op.ne]: 0
+            [Op.ne]: 0
         }
-      }
+    }
     const relations = {
         warehouses: await InboundStat.findAll({
             group: ['warehouseId'],
@@ -72,7 +72,7 @@ router.get('/relations', async (req, res, next) => {
         }),
         products: await sequelize.query(`select distinct productId as id, product.name as name 
         from Inventories join Products as product on product.id = Inventories.productId 
-        where customerId = ${req.companyId} and availableQuantity != 0;`,{ type: Sequelize.QueryTypes.SELECT })
+        where customerId = ${req.companyId} and availableQuantity != 0;`, { type: Sequelize.QueryTypes.SELECT })
     }
 
     res.json({
