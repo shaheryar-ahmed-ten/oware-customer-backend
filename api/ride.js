@@ -24,7 +24,6 @@ const moment = require("moment");
 
 /* GET rides listing. */
 router.get("/", async (req, res, next) => {
-  console.log("req.user", req.user);
   const limit = req.query.rowsPerPage || config.rowsPerPage;
   const offset = (req.query.page - 1 || 0) * limit;
   let where = { customerId: req.user.companyId };
