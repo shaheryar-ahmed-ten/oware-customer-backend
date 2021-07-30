@@ -34,7 +34,7 @@ module.exports = {
 
   down: async () => {
     const superAdminRole = await Role.findOne({ where: { type: "CUSTOMER_SUPER_ADMIN" } });
-    const adminRole = await Role.findOne({ where: { type: "CUSTOMER_SUPER_ADMIN" } });
+    const adminRole = await Role.findOne({ where: { type: "CUSTOMER_ADMIN" } });
     const permissions = await Permission.findAll({
       where: {
         type: {
