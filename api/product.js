@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Warehouse, Product, UOM, Inventory, Category, Brand, InboundStat } = require('../models')
+const { Warehouse, Product, UOM, Inventory, Category, Brand, InboundStat, sequelize } = require('../models')
 const config = require('../config');
 const { Op, Sequelize } = require('sequelize');
 
@@ -15,7 +15,7 @@ router.get('/', async (req, res, next) => {
         [key]: { [Op.like]: '%' + req.query.search + '%' }
     }));
     if ('product' in req.query) {
-        where = { 'productId': req.query.product }
+        where['productId'] = req.query.product;
     }
 
     const response = await Inventory.findAll({
@@ -44,17 +44,15 @@ router.get('/', async (req, res, next) => {
 });
 
 router.get('/relations', async (req, res, next) => {
-    const whereClauseWithoutDate = { customerId: req.companyId };
+    const whereClauseWithoutDate = {
+        customerId: req.companyId, availableQuantity: {
+          [Op.ne]: 0
+        }
+      }
     const relations = {
-        products: await InboundStat.findAll({
-            group: ['productId'],
-            plain: false,
-            where: whereClauseWithoutDate,
-            attributes: [
-                ['productId', 'id'],
-                [Sequelize.col('product'), 'name']
-            ]
-        }),
+        products: await sequelize.query(`select distinct productId as id, product.name as name 
+        from Inventories join Products as product on product.id = Inventories.productId 
+        where customerId = ${req.companyId} and availableQuantity != 0;`,{ type: Sequelize.QueryTypes.SELECT })
     }
 
     res.json({
@@ -82,7 +80,7 @@ router.get('/:id', async (req, res, next) => {
                 'name'
             ]
         }],
-        orderBy: [['createdAt', 'DESC']],
+        order: [['createdAt', 'DESC']],
         where, limit, offset,
     });
     res.json({

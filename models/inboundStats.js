@@ -23,6 +23,11 @@ module.exports = (sequelize, DataTypes) => {
       InboundStat.belongsTo(models.ProductInward, {
         foreignKey: 'id'
       });
+      InboundStat.belongsToMany(models.Product, {
+        through: models.InwardGroup,
+        foreignKey: 'productInwardId',
+        as: 'Products'
+      });
     }
   };
   InboundStat.init({
