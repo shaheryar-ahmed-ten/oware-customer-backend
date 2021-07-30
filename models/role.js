@@ -1,6 +1,6 @@
-'use strict';
-const { Model } = require('sequelize');
-const { APPS } = require('../enums');
+"use strict";
+const { Model } = require("sequelize");
+const { APPS } = require("../enums");
 
 module.exports = (sequelize, DataTypes) => {
   class Role extends Model {
@@ -12,27 +12,31 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       Role.hasMany(models.PermissionAccess, {
-        sourceKey: 'id',
-        foreignKey: 'roleId'
+        sourceKey: "id",
+        foreignKey: "roleId"
       });
     }
-  };
-  Role.init({
-    type: {
-      type: DataTypes.STRING,
-      unique: true
+  }
+  Role.init(
+    {
+      type: {
+        type: DataTypes.STRING,
+        unique: true
+      },
+      name: DataTypes.STRING,
+      allowedApps: {
+        type: DataTypes.ENUM({
+          values: Object.keys(APPS)
+        }),
+        allowNull: false,
+        defaultValue: "CUSTOMER"
+      }
     },
-    name: DataTypes.STRING,
-    allowedApps: {
-      type: DataTypes.ENUM({
-        values: Object.keys(APPS)
-      }),
-      allowNull: false
+    {
+      sequelize,
+      paranoid: true,
+      modelName: "Role"
     }
-  }, {
-    sequelize,
-    paranoid: true,
-    modelName: 'Role',
-  }).sync();
+  ).sync();
   return Role;
 };

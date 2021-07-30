@@ -1,9 +1,8 @@
-'use strict';
+"use strict";
 const { Op } = require("sequelize");
-const { Role, PermissionAccess, Permission } = require('../models')
-const permissionEnums = require('../enums/permissions');
-const { ROLES } = require('../enums');
-
+const { Role, PermissionAccess, Permission } = require("../models");
+const permissionEnums = require("../enums/permissions");
+const { ROLES } = require("../enums");
 
 module.exports = {
   up: async () => {
@@ -15,7 +14,7 @@ module.exports = {
     const superAdminPermissions = await Permission.findAll({
       where: {
         type: {
-          [Op.in]: Object.keys(permissionEnums).filter(type => type.indexOf('_FULL') > -1)
+          [Op.in]: Object.keys(permissionEnums).filter(type => type.indexOf("_FULL") > -1)
         }
       }
     });
@@ -25,10 +24,12 @@ module.exports = {
       },
       force: true
     });
-    let permissionAccesses = await PermissionAccess.bulkCreate(superAdminPermissions.map(permission => ({
-      roleId: superAdminRole.id,
-      permissionId: permission.id,
-    })));
+    let permissionAccesses = await PermissionAccess.bulkCreate(
+      superAdminPermissions.map(permission => ({
+        roleId: superAdminRole.id,
+        permissionId: permission.id
+      }))
+    );
     return [permissionAccesses];
   },
   down: async () => {
@@ -40,16 +41,18 @@ module.exports = {
     const permissions = await Permission.findAll({
       where: {
         type: {
-          [Op.in]: Object.keys(permissionEnums).filter(type => type.indexOf('_FULL') > -1)
+          [Op.in]: Object.keys(permissionEnums).filter(type => type.indexOf("_FULL") > -1)
         }
       }
     });
-    const deletions = await PermissionAccess.destroy({
-      where: {
-        permissionId: { [Op.in]: permissions.map(perm => perm.id) },
-        roleId: superAdminRole.id
-      },
-      force: true
-    });
+    if (superAdminRole) {
+      const deletions = await PermissionAccess.destroy({
+        where: {
+          permissionId: { [Op.in]: permissions.map(perm => perm.id) },
+          roleId: superAdminRole.id
+        },
+        force: true
+      });
+    }
   }
 };
