@@ -5,17 +5,19 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const cors = require('cors');
 const fs = require('fs')
+const morganBody = require('morgan-body')
 
 const { syncPermissions } = require('./services/permission.service');
 const apiRouter = require('./api');
 
 const app = express();
 
-// create a write stream (in append mode)
 var accessLogStream = fs.createWriteStream(path.join(__dirname, 'access.log'), { flags: 'a' })
- 
-// setup the logger
-app.use(logger('combined', { stream: accessLogStream }))
+morganBody(app, {
+  // .. other settings
+  noColors: true,
+  stream: accessLogStream,
+});
 
 // view engine setup
 // app.set('views', path.join(__dirname, 'views'));
