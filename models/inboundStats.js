@@ -1,7 +1,5 @@
-'use strict';
-const {
-  Model
-} = require('sequelize');
+"use strict";
+const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class InboundStat extends Model {
     /**
@@ -12,39 +10,42 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       InboundStat.belongsTo(models.Company, {
-        foreignKey: 'customerId'
+        foreignKey: "customerId"
       });
       InboundStat.belongsTo(models.Warehouse, {
-        foreignKey: 'warehouseId'
+        foreignKey: "warehouseId"
       });
       InboundStat.belongsTo(models.Product, {
-        foreignKey: 'productId'
+        foreignKey: "productId"
       });
       InboundStat.belongsTo(models.ProductInward, {
-        foreignKey: 'id'
+        foreignKey: "id"
       });
-      InboundStat.belongsToMany(models.Product, {
-        through: models.InwardGroup,
-        foreignKey: 'productInwardId',
-        as: 'Products'
-      });
+      // InboundStat.belongsToMany(models.Product, {
+      //   through: models.InwardGroup,
+      //   foreignKey: "productInwardId",
+      //   as: "Products"
+      // });
     }
-  };
-  InboundStat.init({
-    customerId: DataTypes.INTEGER,
-    warehouseId: DataTypes.INTEGER,
-    productId: DataTypes.INTEGER,
-    productInwardId: DataTypes.INTEGER,
-    product: DataTypes.STRING,
-    weight: DataTypes.INTEGER,
-    dimensionsCBM: DataTypes.INTEGER,
-    uom: DataTypes.STRING,
-    warehouse: DataTypes.STRING,
-    customer: DataTypes.STRING,
-    productInwardCreatedAt: DataTypes.DATE
-  }, {
-    sequelize,
-    modelName: 'InboundStat'
-  });
+  }
+  InboundStat.init(
+    {
+      customerId: DataTypes.INTEGER,
+      warehouseId: DataTypes.INTEGER,
+      productId: DataTypes.INTEGER,
+      productInwardId: DataTypes.INTEGER,
+      product: DataTypes.STRING,
+      weight: DataTypes.INTEGER,
+      dimensionsCBM: DataTypes.INTEGER,
+      uom: DataTypes.STRING,
+      warehouse: DataTypes.STRING,
+      customer: DataTypes.STRING,
+      productInwardCreatedAt: DataTypes.DATE
+    },
+    {
+      sequelize,
+      modelName: "InboundStat"
+    }
+  );
   return InboundStat;
 };

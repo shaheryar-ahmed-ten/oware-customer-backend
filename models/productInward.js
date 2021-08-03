@@ -1,6 +1,6 @@
-'use strict';
-const { Model } = require('sequelize');
-const bcrypt = require('bcrypt');
+"use strict";
+const { Model } = require("sequelize");
+const bcrypt = require("bcrypt");
 
 module.exports = (sequelize, DataTypes) => {
   class ProductInward extends Model {
@@ -12,64 +12,69 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       ProductInward.belongsTo(models.User, {
-        foreignKey: 'userId'
+        foreignKey: "userId"
       });
       ProductInward.belongsTo(models.Product, {
-        foreignKey: 'productId'
+        foreignKey: "productId",
+        as: "Product"
       });
       ProductInward.belongsToMany(models.Product, {
         through: models.InwardGroup,
-        foreignKey: 'inwardId',
-        as: 'Products'
+        foreignKey: "inwardId",
+        as: "Products"
       });
       ProductInward.belongsTo(models.Warehouse, {
-        foreignKey: 'warehouseId'
+        foreignKey: "warehouseId"
       });
       ProductInward.belongsTo(models.Company, {
-        foreignKey: 'customerId'
+        foreignKey: "customerId"
       });
-    };
-  };
-  ProductInward.init({
-    userId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      validate: { notEmpty: true }
-    },
-    quantity: {
-      type: DataTypes.INTEGER,
-      validate: {
-        isInt: { msg: 'Please enter quantity' }
+    }
+  }
+  ProductInward.init(
+    {
+      userId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: { notEmpty: true }
+      },
+      quantity: {
+        type: DataTypes.INTEGER,
+        validate: {
+          isInt: { msg: "Please enter quantity" }
+        }
+      },
+      internalIdForBusiness: {
+        type: DataTypes.STRING(30),
+        allowNull: true
+      },
+      productId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: { notEmpty: { msg: "Product cannot be empty" } }
+      },
+      customerId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: { notEmpty: { msg: "Company cannot be empty" } }
+      },
+      referenceId: {
+        type: DataTypes.STRING(30),
+        allowNull: true
+      },
+      warehouseId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: { notEmpty: { msg: "Warehouse cannot be empty" } }
       }
     },
-    internalIdForBusiness: {
-      type: DataTypes.STRING(30),
-      allowNull: true
-    },
-    productId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      validate: { notEmpty: { msg: 'Product cannot be empty' } }
-    },
-    customerId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      validate: { notEmpty: { msg: 'Customer cannot be empty' } }
-    },
-    referenceId:{
-      type: DataTypes.STRING(30),
-      allowNull:true,
-    },
-    warehouseId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      validate: { notEmpty: { msg: 'Warehouse cannot be empty' } }
-    },
-  }, {
-    sequelize,
-    paranoid: true,
-    modelName: 'ProductInward',
-  });
+    {
+      sequelize,
+      paranoid: true,
+      modelName: "ProductInward",
+      sync: true
+    }
+  );
 
   return ProductInward;
 };
