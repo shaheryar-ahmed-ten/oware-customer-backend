@@ -97,7 +97,7 @@ router.get('/:id', async (req, res, next) => {
   const offset = (req.query.page - 1 || 0) * limit;
   try {
     let response = await DispatchOrder.findAndCountAll({
-
+      distinct: true,
       where: { id: req.params.id },
       include: [{
         model: Inventory,
