@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const moment = require('moment')
-const { Warehouse, Product, UOM, OutboundStat, DispatchOrder, ProductOutward, Vehicle } = require('../models')
+const { Warehouse, Product, UOM, OutboundStat, DispatchOrder, ProductOutward, Vehicle, Car, CarMake, CarModel  } = require('../models')
 const config = require('../config');
 const { Op, Sequelize } = require('sequelize');
 
@@ -21,11 +21,11 @@ router.get('/', async (req, res, next) => {
 
   if ('status' in req.query) {
     if (req.query.status === '0') // Pending
-      having = Sequelize.literal(`sum(productOutwardQuantity) = 0`);
+      having = Sequelize.literal(`sum(quantity) = 0`);
     if (req.query.status === '1') // Partially fulfilled
-      having = Sequelize.literal(`sum(productOutwardQuantity) > 0 && sum(productOutwardQuantity) < dispatchOrderQuantity`);
+      having = Sequelize.literal(`sum(quantity) > 0 && sum(productOutwardQuantity) < dispatchOrderQuantity`);
     if (req.query.status === '2') // Fulfilled
-      having = Sequelize.literal(`sum(productOutwardQuantity) = dispatchOrderQuantity`);
+      having = Sequelize.literal(`sum(quantity) = dispatchOrderQuantity`);
   }
 
   if ('warehouse' in req.query) {
@@ -45,14 +45,13 @@ router.get('/', async (req, res, next) => {
   const response = await OutboundStat.findAndCountAll({
     attributes: [
       'referenceId', 'shipmentDate', 'internalIdForBusiness',
-      'dispatchOrderId', 'warehouse', 'customer', 'product', 'dispatchOrderQuantity',
-      [Sequelize.fn('sum', Sequelize.col('productOutwardQuantity')), 'outwardQuantity'],
+      'dispatchOrderId', 'warehouse', 'customer', 'dispatchOrderQuantity',
+      [Sequelize.fn('sum', Sequelize.col('quantity')), 'outwardQuantity'],
       ['dispatchOrderId', 'productOutwardId'],
       [Sequelize.fn('count', Sequelize.col('productOutwardId')), 'outwardCount']
     ],
-    order: [['createdAt', 'DESC']],
     where, limit, offset, having,
-    group: ['dispatchOrderId', 'dispatchOrderQuantity', 'warehouse', 'customer', 'product']
+    group: ['dispatchOrderId', 'dispatchOrderQuantity', 'warehouse', 'customer']
   });
   res.json({
     success: true,
@@ -100,7 +99,8 @@ router.get('/:id', async (req, res, next) => {
     let response = await DispatchOrder.findAndCountAll({
 
       where: { id: req.params.id },
-      include: [{ model: ProductOutward, include: [{ model: Vehicle }] }]
+      include: [{ model: ProductOutward, include: [{ model: Vehicle,
+        include: [{ model: Car, include: [CarMake, CarModel] }] }] }]
     });
     return res.json({
       success: true,

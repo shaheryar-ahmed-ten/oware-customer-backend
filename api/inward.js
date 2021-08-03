@@ -33,13 +33,16 @@ router.get('/', async (req, res, next) => {
     const response = await ProductInward.findAndCountAll({
         include: [{
             model: Product,
+            required:true,
             include: [{ model: UOM }]
         }, {
             model: Product,
             as: 'Products',
+            required:true,
             include: [{ model: UOM }]
         }, {
-            model: Warehouse
+            model: Warehouse,
+            required: true,
         }],
         order: [['createdAt', 'DESC']],
         where, limit, offset
