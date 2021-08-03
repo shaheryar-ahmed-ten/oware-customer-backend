@@ -23,6 +23,14 @@ module.exports = (sequelize, DataTypes) => {
       Inventory.hasMany(models.DispatchOrder, {
         foreignKey: 'inventoryId'
       });
+      Inventory.belongsToMany(models.DispatchOrder, {
+        through: models.OrderGroup,
+        foreignKey: 'inventoryId'
+      });
+      Inventory.belongsToMany(models.ProductOutward, {
+        through: models.OutwardGroup,
+        foreignKey: 'inventoryId'
+      });
     };
   };
   Inventory.init({
@@ -45,8 +53,7 @@ module.exports = (sequelize, DataTypes) => {
     customerId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      validate: { notEmpty: { msg: 'Company cannot be empty' } }
-
+      validate: { notEmpty: { msg: 'Customer cannot be empty' } }
     },
     warehouseId: {
       type: DataTypes.INTEGER,

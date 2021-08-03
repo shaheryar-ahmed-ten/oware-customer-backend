@@ -20,6 +20,11 @@ module.exports = (sequelize, DataTypes) => {
       ProductOutward.belongsTo(models.DispatchOrder, {
         foreignKey: 'dispatchOrderId'
       });
+      ProductOutward.belongsToMany(models.Inventory, {
+        through: models.OutwardGroup,
+        foreignKey: 'outwardId',
+        as: 'Inventories'
+      });
     };
   };
   ProductOutward.init({

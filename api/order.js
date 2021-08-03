@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const moment = require('moment')
-const { Warehouse, Product, UOM, OutboundStat, DispatchOrder, ProductOutward, Vehicle, Car, CarMake, CarModel  } = require('../models')
+const { Warehouse, Product, UOM, OutboundStat, DispatchOrder, ProductOutward, Vehicle, Car, CarMake, CarModel, Inventory, Company} = require('../models')
 const config = require('../config');
 const { Op, Sequelize } = require('sequelize');
 
@@ -99,12 +99,23 @@ router.get('/:id', async (req, res, next) => {
     let response = await DispatchOrder.findAndCountAll({
 
       where: { id: req.params.id },
-      include: [{ model: ProductOutward, include: [{ model: Vehicle,
-        include: [{ model: Car, include: [CarMake, CarModel] }] }] }]
+      include: [{
+        model: Inventory,
+        as: 'Inventories',
+        include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
+      }, {
+        model: ProductOutward, include: [{
+          model: Inventory, as: 'Inventories',
+          include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
+        }, {
+          model: Vehicle,
+          include: [{ model: Car, include: [CarMake, CarModel] }]
+        }]
+      }]
     });
     return res.json({
       success: true,
-      message: 'Product Outwards',
+      message: 'Product Outwards inside Dispatch Orders',
       data: response.rows,
       count: response.count,
       pages: Math.ceil(response.count / limit)

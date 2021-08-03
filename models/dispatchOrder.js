@@ -15,10 +15,16 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'userId'
       });
       DispatchOrder.hasMany(models.ProductOutward, {
-        foreignKey: 'dispatchOrderId'
+        foreignKey: 'dispatchOrderId',
       });
       DispatchOrder.belongsTo(models.Inventory, {
-        foreignKey: 'inventoryId'
+        foreignKey: 'inventoryId',
+        as: 'Inventory'
+      });
+      DispatchOrder.belongsToMany(models.Inventory, {
+        through: models.OrderGroup,
+        foreignKey: 'orderId',
+        as: 'Inventories'
       });
     };
   };
