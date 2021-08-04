@@ -1,7 +1,21 @@
 const express = require("express");
 const router = express.Router();
 const moment = require("moment");
-const { ProductInward, Warehouse, Product, UOM, InboundStat, Inventory, sequelize, InwardGroup, User, Company } = require("../models");
+const {
+  ProductInward,
+  Warehouse,
+  Product,
+  UOM,
+  InboundStat,
+  Inventory,
+  sequelize,
+  InwardGroup,
+  User,
+  Company,
+  DispatchOrder,
+  ProductOutward,
+  Vehicle
+} = require("../models");
 const config = require("../config");
 const { Op, Sequelize } = require("sequelize");
 const authService = require("../services/auth.service");
@@ -85,7 +99,36 @@ router.get("/relations", async (req, res, next) => {
         from Inventories join Products as product on product.id = Inventories.productId 
         where customerId = ${req.companyId} and availableQuantity != 0;`,
       { type: Sequelize.QueryTypes.SELECT }
-    )
+    ),
+    dispatchOrders: await DispatchOrder.findAll({
+      include: [
+        {
+          model: Inventory,
+          as: "Inventory",
+          include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
+        },
+        {
+          model: Inventory,
+          as: "Inventories",
+          include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
+        },
+        {
+          model: ProductOutward,
+          include: [
+            {
+              model: Vehicle
+            },
+            {
+              model: Inventory,
+              as: "Inventories",
+              include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
+            }
+          ]
+        }
+      ],
+      order: [["updatedAt", "DESC"]]
+    }),
+    vehicles: await Vehicle.findAll({ where: { isActive: true } })
   };
 
   res.json({
@@ -135,7 +178,7 @@ router.post("/", async (req, res, next) => {
         req.body.products.map(product =>
           Inventory.findOne({
             where: {
-              customerId: req.body.customerId,
+              customerId: req.userId,
               warehouseId: req.body.warehouseId,
               productId: product.id
             }
@@ -143,7 +186,7 @@ router.post("/", async (req, res, next) => {
             if (!inventory)
               return Inventory.create(
                 {
-                  customerId: req.body.customerId,
+                  customerId: req.userId,
                   warehouseId: req.body.warehouseId,
                   productId: product.id,
                   availableQuantity: product.quantity,
