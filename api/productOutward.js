@@ -50,10 +50,10 @@ router.get("/", async (req, res, next) => {
           }
         ]
       },
-      {
-        model: Vehicle,
-        include: [{ model: Car, include: [CarMake, CarModel] }]
-      },
+      // {
+      //   model: Vehicle,
+      //   include: [{ model: Car, include: [CarMake, CarModel] }]
+      // },
       {
         model: Inventory,
         as: "Inventories",
@@ -96,32 +96,32 @@ router.get("/", async (req, res, next) => {
   }
 
   const count = await ProductOutward.count({
-    include: [
-      {
-        model: DispatchOrder,
-        include: [
-          {
-            model: Inventory,
-            as: "Inventory",
-            include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
-          },
-          {
-            model: Inventory,
-            as: "Inventories",
-            include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
-          }
-        ]
-      },
-      {
-        model: Vehicle,
-        include: [{ model: Car, include: [CarMake, CarModel] }]
-      },
-      {
-        model: Inventory,
-        as: "Inventories",
-        include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
-      }
-    ],
+    // include: [
+    //   {
+    //     model: DispatchOrder,
+    //     include: [
+    //       {
+    //         model: Inventory,
+    //         as: "Inventory",
+    //         include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
+    //       },
+    //       {
+    //         model: Inventory,
+    //         as: "Inventories",
+    //         include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
+    //       }
+    //     ]
+    //   },
+    //   {
+    //     model: Vehicle,
+    //     include: [{ model: Car, include: [CarMake, CarModel] }]
+    //   },
+    //   {
+    //     model: Inventory,
+    //     as: "Inventories",
+    //     include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
+    //   }
+    // ],
     order: [["updatedAt", "DESC"]],
     where,
     limit,
