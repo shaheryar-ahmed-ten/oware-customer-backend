@@ -17,14 +17,14 @@ router.get('/', async (req, res, next) => {
         const previousDate = moment().subtract(req.query.days, 'days');
         where['createdAt'] = { [Op.between]: [previousDate, currentDate] };
     }
-    if (req.query.search) where[Op.or] = ['$Product.name$', '$ProductInward.referenceId$', '$Warehouse.name$'].map(key => ({
+    if (req.query.search) where[Op.or] = ['$Products.name$', '$ProductInward.referenceId$', '$Warehouse.name$'].map(key => ({
         [key]: { [Op.like]: '%' + req.query.search + '%' }
     }));
     if ('warehouse' in req.query) {
         where['warehouseId'] = req.query.warehouse;
     }
     if ('product' in req.query) {
-        where['productId'] = req.query.product;
+        where['$Products.id$'] = req.query.product;
     }
     if ('referenceId' in req.query) {
         where['referenceId'] = req.query.referenceId;
@@ -33,19 +33,13 @@ router.get('/', async (req, res, next) => {
     const response = await ProductInward.findAndCountAll({
         include: [{
             model: Product,
-            required:true,
-            include: [{ model: UOM }]
-        }, {
-            model: Product,
             as: 'Products',
-            required:true,
             include: [{ model: UOM }]
         }, {
             model: Warehouse,
-            required: true,
         }],
         order: [['createdAt', 'DESC']],
-        where, limit, offset
+        where, 
     });
     res.json({
         success: true,
