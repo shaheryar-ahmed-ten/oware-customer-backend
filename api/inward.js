@@ -71,6 +71,8 @@ router.get("/", async (req, res, next) => {
 });
 
 router.get("/relations", async (req, res, next) => {
+  let where = { isActive: true };
+  console.log("req.companyId", req.companyId);
   const whereClauseWithoutDate = { customerId: req.companyId };
   const whereClauseWithoutDateAndQuantity = {
     customerId: req.companyId,
@@ -88,12 +90,7 @@ router.get("/relations", async (req, res, next) => {
         [Sequelize.col("warehouse"), "name"]
       ]
     }),
-    products: await sequelize.query(
-      `select distinct productId as id, product.name as name 
-        from Inventories join Products as product on product.id = Inventories.productId 
-        where customerId = ${req.companyId} and availableQuantity != 0;`,
-      { type: Sequelize.QueryTypes.SELECT }
-    ),
+    products: await Product.findAll({ where, include: [{ model: UOM }] }),
     dispatchOrders: await DispatchOrder.findAll({
       include: [
         {
