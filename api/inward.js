@@ -136,7 +136,7 @@ router.post("/", async (req, res, next) => {
     // Hack for backward compatibility
     console.log("------------- debug1 ----------------------------");
     req.body.products = req.body.products || [{ id: req.body.productId, quantity: req.body.quantity }];
-    console.log("------------- debug2 ----------------------------\nreq.body", req.body);
+    console.log("------------- debug2 ----------------------------\nreq.userId", req.userId);
     const { id } = await Company.findOne({ where: { userId: req.userId } });
 
     await sequelize.transaction(async transaction => {
