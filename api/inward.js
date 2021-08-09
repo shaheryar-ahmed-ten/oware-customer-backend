@@ -145,7 +145,9 @@ router.post("/", async (req, res, next) => {
     // Hack for backward compatibility
     console.log("------------- debug1 ----------------------------");
     req.body.products = req.body.products || [{ id: req.body.productId, quantity: req.body.quantity }];
-    console.log("------------- debug2 ----------------------------");
+    console.log("------------- debug2 ----------------------------\nreq.body", req.body);
+    const { id } = await Company.findOne({ where: { userId: req.userId } });
+    console.log("customerId", customerId);
 
     await sequelize.transaction(async transaction => {
       productInward = await ProductInward.create(
@@ -178,7 +180,7 @@ router.post("/", async (req, res, next) => {
         req.body.products.map(product =>
           Inventory.findOne({
             where: {
-              customerId: req.userId,
+              customerId: id,
               warehouseId: req.body.warehouseId,
               productId: product.id
             }
@@ -186,7 +188,7 @@ router.post("/", async (req, res, next) => {
             if (!inventory)
               return Inventory.create(
                 {
-                  customerId: req.userId,
+                  customerId: id,
                   warehouseId: req.body.warehouseId,
                   productId: product.id,
                   availableQuantity: product.quantity,
@@ -222,7 +224,9 @@ router.get("/listing", async (req, res, next) => {
     // userId: req.userId
   };
   if (req.query.search)
-    where[Op.or] = ["$Product.name$", "$Company.name$", "$Warehouse.name$"].map(key => ({ [key]: { [Op.like]: "%" + req.query.search + "%" } }));
+    where[Op.or] = ["$Product.name$", "$Company.name$", "$Warehouse.name$"].map(key => ({
+      [key]: { [Op.like]: "%" + req.query.search + "%" }
+    }));
   const response = await ProductInward.findAndCountAll({
     distinct: true,
     include: [

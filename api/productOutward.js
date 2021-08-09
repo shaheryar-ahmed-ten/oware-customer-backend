@@ -17,22 +17,22 @@ const {
   sequelize
 } = require("../models");
 const config = require("../config");
-const { Op, where } = require("sequelize");
-const { digitize } = require("../services/common.services");
+const { Op } = require("sequelize");
+const {
+  digitize,
+  removeFromObject,
+  sanitizeFilters,
+  removeChildModelFilters,
+  attachDateFilter,
+  modelWiseFilters
+} = require("../services/common.services");
 
 /* GET productOutwards listing. */
 router.get("/", async (req, res, next) => {
-  const limit = req.query.rowsPerPage || config.rowsPerPage;
-  const offset = (req.query.page - 1 || 0) * limit;
-  let where = {
-    // userId: req.userId
-  };
-  if (req.query.search)
-    where[Op.or] = [
-      "$DispatchOrder.Inventories.Product.name$",
-      "$DispatchOrder.Inventories.Company.name$",
-      "$DispatchOrder.Inventories.Warehouse.name$"
-    ].map(key => ({ [key]: { [Op.like]: "%" + req.query.search + "%" } }));
+  let { rowsPerPage, page, ...filters } = req.query;
+  const limit = Number(rowsPerPage || config.rowsPerPage);
+  const offset = Number((page - 1 || 0) * limit);
+  where = sanitizeFilters({ ...filters });
   const response = await ProductOutward.findAndCountAll({
     include: [
       {
@@ -48,20 +48,27 @@ router.get("/", async (req, res, next) => {
             as: "Inventories",
             include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
           }
-        ]
+        ],
+        where: modelWiseFilters(where, "DispatchOrder")
       },
-      // {
-      //   model: Vehicle,
-      //   include: [{ model: Car, include: [CarMake, CarModel] }]
-      // },
+      {
+        model: Vehicle,
+        include: [{ model: Car, include: [CarMake, CarModel] }]
+      },
       {
         model: Inventory,
         as: "Inventories",
-        include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
+        include: [
+          { model: Product, include: [{ model: UOM }], where: modelWiseFilters(where, "Product") },
+          { model: Company, where: modelWiseFilters(where, "Company") },
+          { model: Warehouse, where: modelWiseFilters(where, "Warehouse") }
+        ]
       }
     ],
     order: [["updatedAt", "DESC"]],
-    where
+    where: removeChildModelFilters({ ...where }),
+    limit,
+    offset
   });
   var acc = [];
   response.rows.forEach(productOutward => {
@@ -95,44 +102,11 @@ router.get("/", async (req, res, next) => {
     response.rows[index].quantity = comittedAcc[index];
   }
 
-  const count = await ProductOutward.count({
-    // include: [
-    //   {
-    //     model: DispatchOrder,
-    //     include: [
-    //       {
-    //         model: Inventory,
-    //         as: "Inventory",
-    //         include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
-    //       },
-    //       {
-    //         model: Inventory,
-    //         as: "Inventories",
-    //         include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
-    //       }
-    //     ]
-    //   },
-    //   {
-    //     model: Vehicle,
-    //     include: [{ model: Car, include: [CarMake, CarModel] }]
-    //   },
-    //   {
-    //     model: Inventory,
-    //     as: "Inventories",
-    //     include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
-    //   }
-    // ],
-    order: [["updatedAt", "DESC"]],
-    where,
-    limit,
-    offset
-  });
-
   res.json({
     success: true,
     message: "respond with a resource",
     data: response.rows,
-    pages: Math.ceil(count / limit)
+    pages: Math.ceil(response.count / limit)
   });
 });
 
@@ -184,7 +158,8 @@ router.post("/", async (req, res, next) => {
         req.body.inventories.map(_inventory => {
           return Inventory.findByPk(_inventory.id, { transaction }).then(inventory => {
             if (!inventory && !_inventory.id) throw new Error("Inventory is not available");
-            if (_inventory.quantity > inventory.committedQuantity) throw new Error("Cannot create orders above available quantity");
+            if (_inventory.quantity > inventory.committedQuantity)
+              throw new Error("Cannot create orders above available quantity");
             try {
               inventory.dispatchedQuantity += +_inventory.quantity;
               inventory.committedQuantity -= +_inventory.quantity;
