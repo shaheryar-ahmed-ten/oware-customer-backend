@@ -142,7 +142,7 @@ router.post("/", async (req, res, next) => {
     await sequelize.transaction(async transaction => {
       productInward = await ProductInward.create(
         {
-          userId: req.userId,
+          userId: id,
           ...req.body
         },
         { transaction }
