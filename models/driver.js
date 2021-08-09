@@ -19,79 +19,79 @@ module.exports = (sequelize, DataTypes) => {
       Driver.hasMany(models.Ride, {
         foreignKey: "driverId"
       });
-<<<<<<< HEAD
       Driver.belongsTo(models.File, {
         foreignKey: "drivingLicenseId",
-        as: 'DrivingLicense'
+        as: "DrivingLicense"
       });
       Driver.belongsTo(models.File, {
         foreignKey: "cnicId",
-        as: 'Cnic'
+        as: "Cnic"
       });
       Driver.belongsTo(models.File, {
         foreignKey: "photoId",
-        as: 'Photo'
+        as: "Photo"
       });
-=======
->>>>>>> 289312a42b5e8ebdbc32c38eb6393dc9c66d40fa
       Driver.belongsTo(models.Company, {
         foreignKey: "companyId",
-        as: 'Vendor'
+        as: "Vendor"
       });
     }
   }
-  Driver.init({
-    userId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      validate: { notEmpty: true }
+  Driver.init(
+    {
+      userId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: { notEmpty: true }
+      },
+      companyId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: { notEmpty: { msg: "Please enter vendor name" } }
+      },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: { notEmpty: { msg: "Please enter name" } }
+      },
+      phone: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: { notEmpty: { msg: "Please enter phone number" } }
+      },
+      photoId: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+      },
+      cnicId: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+      },
+      cnicNumber: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: { notEmpty: { msg: "Please enter cnic number" } }
+      },
+      drivingLicenseId: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+      },
+      drivingLicenseNumber: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: { notEmpty: { msg: "Please enter driving license number" } }
+      },
+      isActive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
+      }
     },
-    companyId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      validate: { notEmpty: { msg: "Please enter vendor name" } },
-    },
-    name: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      validate: { notEmpty: { msg: "Please enter name" } },
-    },
-    phone: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      validate: { notEmpty: { msg: "Please enter phone number" } },
-    },
-    photoId: {
-      type: DataTypes.INTEGER,
-      allowNull: true
-    },
-    cnicId: {
-      type: DataTypes.INTEGER,
-      allowNull: true
-    },
-    cnicNumber: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      validate: { notEmpty: { msg: "Please enter cnic number" } },
-    },
-    drivingLicenseId: {
-      type: DataTypes.INTEGER,
-      allowNull: true
-    },
-    drivingLicenseNumber: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      validate: { notEmpty: { msg: "Please enter driving license number" } },
-    },
-    isActive: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true
+    {
+      sequelize,
+      paranoid: true,
+      modelName: "Driver",
+      timestamps: true
     }
-  }, {
-    sequelize,
-    paranoid: true,
-    modelName: "Driver",
-    timestamps: true,
-  });
+  );
   return Driver;
 };

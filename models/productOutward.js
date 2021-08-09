@@ -22,7 +22,6 @@ module.exports = (sequelize, DataTypes) => {
       });
       ProductOutward.belongsToMany(models.Inventory, {
         through: models.OutwardGroup,
-<<<<<<< HEAD
         foreignKey: "outwardId",
         as: "Inventories"
       });
@@ -58,24 +57,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: { notEmpty: { msg: "Dispatch order cannot be empty" } }
-=======
-        foreignKey: 'outwardId',
-        as: 'Inventories'
-      });
-    };
-  };
-  ProductOutward.init({
-    userId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      validate: { notEmpty: true }
-
-    },
-    quantity: {
-      type: DataTypes.INTEGER,
-      validate: {
-        isInt: { msg: 'Please enter quantity' }
->>>>>>> 289312a42b5e8ebdbc32c38eb6393dc9c66d40fa
       }
     },
     {
