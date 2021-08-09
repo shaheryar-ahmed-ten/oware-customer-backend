@@ -19,6 +19,7 @@ module.exports = (sequelize, DataTypes) => {
       Driver.hasMany(models.Ride, {
         foreignKey: "driverId"
       });
+<<<<<<< HEAD
       Driver.belongsTo(models.File, {
         foreignKey: "drivingLicenseId",
         as: 'DrivingLicense'
@@ -31,6 +32,8 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "photoId",
         as: 'Photo'
       });
+=======
+>>>>>>> 289312a42b5e8ebdbc32c38eb6393dc9c66d40fa
       Driver.belongsTo(models.Company, {
         foreignKey: "companyId",
         as: 'Vendor'

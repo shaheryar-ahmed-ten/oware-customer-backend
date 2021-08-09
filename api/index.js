@@ -3,7 +3,10 @@ const router = express.Router();
 const userRouter = require("./user");
 const dashboardRouter = require("./dashboard");
 const inwardRouter = require("./inward");
+<<<<<<< HEAD
 const outwardRouter = require("./productOutward");
+=======
+>>>>>>> 289312a42b5e8ebdbc32c38eb6393dc9c66d40fa
 const orderRouter = require("./order");
 const productRouter = require("./product");
 const rideRouter = require("./ride");
@@ -22,9 +25,15 @@ router.get("/", (req, res, next) => {
 router.use("/user", userRouter);
 router.use("/dashboard", isLoggedIn, checkPermission(PERMISSIONS.CP_DASHBOARD_FULL), dashboardRouter);
 router.use("/inward", isLoggedIn, checkPermission(PERMISSIONS.CP_INWARD_FULL), inwardRouter);
+<<<<<<< HEAD
 router.use("/outward", isLoggedIn, checkPermission(PERMISSIONS.CP_INWARD_FULL), outwardRouter);
 router.use("/order", isLoggedIn, checkPermission(PERMISSIONS.CP_ORDER_FULL), orderRouter);
 router.use("/product", isLoggedIn, checkPermission(PERMISSIONS.CP_PRODUCT_FULL), productRouter);
 router.use("/ride", isLoggedIn, checkPermission(PERMISSIONS.CP_RIDE_FULL), rideRouter);
+=======
+router.use("/order", isLoggedIn, checkPermission(PERMISSIONS.CP_ORDER_FULL), orderRouter);
+router.use("/product", isLoggedIn, checkPermission(PERMISSIONS.CP_PRODUCT_FULL), productRouter);
+router.use("/ride", isLoggedIn, checkPermission(PERMISSIONS.CP_DASHBOARD_FULL), rideRouter);
+>>>>>>> 289312a42b5e8ebdbc32c38eb6393dc9c66d40fa
 
 module.exports = router;

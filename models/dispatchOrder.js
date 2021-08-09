@@ -15,11 +15,24 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "userId"
       });
       DispatchOrder.hasMany(models.ProductOutward, {
+<<<<<<< HEAD
         foreignKey: "dispatchOrderId"
       });
       DispatchOrder.belongsTo(models.Inventory, {
         foreignKey: "inventoryId",
         as: "Inventory"
+=======
+        foreignKey: 'dispatchOrderId',
+      });
+      DispatchOrder.belongsTo(models.Inventory, {
+        foreignKey: 'inventoryId',
+        as: 'Inventory'
+      });
+      DispatchOrder.belongsToMany(models.Inventory, {
+        through: models.OrderGroup,
+        foreignKey: 'orderId',
+        as: 'Inventories'
+>>>>>>> 289312a42b5e8ebdbc32c38eb6393dc9c66d40fa
       });
       DispatchOrder.belongsToMany(models.Inventory, {
         through: models.OrderGroup,

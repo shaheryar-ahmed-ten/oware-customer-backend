@@ -1,20 +1,7 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
-const {
-  User,
-  Company,
-  Role,
-  VerificationCode,
-  Ride,
-  RideProduct,
-  Area,
-  Zone,
-  City,
-  Vehicle,
-  Car,
-  Category
-} = require("../models");
+const { User, Company, Role, VerificationCode, Ride, RideProduct, Area, Zone, City, Vehicle, Car, Category, Driver } = require("../models");
 const { sendForgotPasswordOTPEmail } = require("../services/mailer.service");
 const { generateOTP } = require("../services/common.services");
 const config = require("../config");
@@ -42,9 +29,27 @@ router.get("/", async (req, res, next) => {
     ].map(key => ({ [key]: { [Op.like]: "%" + req.query.search + "%" } }));
   if (req.query.status) where["status"] = req.query.status;
   const response = await Ride.findAndCountAll({
+    include: [
+      {
+        model: Vehicle,
+        include: [Driver, { model: Company, as: "Vendor" }]
+      },
+      {
+        model: RideProduct,
+        include: [Category]
+      },
+      {
+        model: Area,
+        as: "PickupArea"
+      },
+      {
+        model: Area,
+        as: "DropoffArea"
+      }
+    ],
     distinct: true,
     subQuery: false,
-    order: [["updatedAt", "DESC"]],
+    order: [["createdAt", "DESC"]],
     where,
     limit,
     offset
@@ -62,14 +67,13 @@ router.get("/", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   let where = {};
   const response = await Ride.findOne({
-    include: [
-      {
-        model: RideProduct
-      }
-    ],
     order: [["updatedAt", "DESC"]],
     where: { id: req.params.id, customerId: req.user.companyId },
     include: [
+      {
+        model: Vehicle,
+        include: [Driver, { model: Company, as: "Vendor" }]
+      },
       {
         model: RideProduct,
         include: [Category]

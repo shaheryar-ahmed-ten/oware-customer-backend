@@ -38,6 +38,16 @@ module.exports = (sequelize, DataTypes) => {
       Vehicle.belongsTo(models.Car, {
         foreignKey: "carId"
       });
+      Vehicle.belongsTo(models.Driver, {
+        foreignKey: "driverId"
+      });
+      Vehicle.belongsTo(models.Company, {
+        foreignKey: "companyId",
+        as: 'Vendor'
+      });
+      Vehicle.belongsTo(models.Car, {
+        foreignKey: "carId"
+      });
     }
   }
   Vehicle.init(
@@ -50,23 +60,39 @@ module.exports = (sequelize, DataTypes) => {
       companyId: {
         type: DataTypes.INTEGER,
         allowNull: false,
+<<<<<<< HEAD
         validate: { notEmpty: { msg: "Please enter vendor name" } }
+=======
+        validate: { notEmpty: { msg: "Please enter vendor name" } },
+>>>>>>> 289312a42b5e8ebdbc32c38eb6393dc9c66d40fa
       },
       driverId: {
         type: DataTypes.INTEGER,
         allowNull: false,
+<<<<<<< HEAD
         validate: { notEmpty: { msg: "Please enter driver name" } }
+=======
+        validate: { notEmpty: { msg: "Please enter driver name" } },
+>>>>>>> 289312a42b5e8ebdbc32c38eb6393dc9c66d40fa
       },
       registrationNumber: {
         type: DataTypes.STRING,
         unique: true,
         allowNull: false,
+<<<<<<< HEAD
         validate: { notEmpty: { msg: "Please enter a vehicle number" } }
+=======
+        validate: { notEmpty: { msg: "Please enter a vehicle number" } },
+>>>>>>> 289312a42b5e8ebdbc32c38eb6393dc9c66d40fa
       },
       carId: {
         type: DataTypes.INTEGER,
         allowNull: true,
+<<<<<<< HEAD
         validate: { notEmpty: { msg: "Please enter car" } }
+=======
+        validate: { notEmpty: { msg: "Please enter car" } },
+>>>>>>> 289312a42b5e8ebdbc32c38eb6393dc9c66d40fa
       },
       photoId: {
         type: DataTypes.INTEGER,
@@ -74,11 +100,19 @@ module.exports = (sequelize, DataTypes) => {
       },
       runningPaperId: {
         type: DataTypes.INTEGER,
+<<<<<<< HEAD
         allowNull: true
       },
       routePermitId: {
         type: DataTypes.INTEGER,
         allowNull: true
+=======
+        allowNull: true,
+      },
+      routePermitId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+>>>>>>> 289312a42b5e8ebdbc32c38eb6393dc9c66d40fa
       },
       isActive: {
         type: DataTypes.BOOLEAN,
