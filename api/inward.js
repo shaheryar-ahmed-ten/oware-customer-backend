@@ -134,11 +134,10 @@ router.post("/", async (req, res, next) => {
     let productInward;
     let message = "New productInward registered";
     // Hack for backward compatibility
-    console.log("------------- debug1 ----------------------------");
     req.body.products = req.body.products || [{ id: req.body.productId, quantity: req.body.quantity }];
-    console.log("------------- debug2 ----------------------------\nreq.userId", req.body);
-    const { id } = await Company.findOne({ where: { userId: req.userId } });
 
+    const { companyId } = await User.findOne({ where: { id: req.userId } });
+    req.body["customerId"] = companyId;
     await sequelize.transaction(async transaction => {
       productInward = await ProductInward.create(
         {
@@ -147,12 +146,10 @@ router.post("/", async (req, res, next) => {
         },
         { transaction }
       );
-      console.log("------------- debug3 ----------------------------");
 
       const numberOfinternalIdForBusiness = digitize(productInward.id, 6);
       productInward.internalIdForBusiness = req.body.internalIdForBusiness + numberOfinternalIdForBusiness;
       await productInward.save({ transaction });
-      console.log("------------- debug4 ----------------------------");
       req.body.products.map(product => console.log("product", product));
 
       await InwardGroup.bulkCreate(
@@ -164,13 +161,12 @@ router.post("/", async (req, res, next) => {
         })),
         { transaction }
       );
-      console.log("------------- debug5 ----------------------------");
 
       return await Promise.all(
         req.body.products.map(product =>
           Inventory.findOne({
             where: {
-              customerId: id,
+              customerId: companyId,
               warehouseId: req.body.warehouseId,
               productId: product.id
             }
@@ -178,7 +174,7 @@ router.post("/", async (req, res, next) => {
             if (!inventory)
               return Inventory.create(
                 {
-                  customerId: id,
+                  customerId: companyId,
                   warehouseId: req.body.warehouseId,
                   productId: product.id,
                   availableQuantity: product.quantity,
@@ -196,7 +192,6 @@ router.post("/", async (req, res, next) => {
         )
       );
     });
-    console.log("------------- debug6 ----------------------------");
     res.json({
       success: true,
       message,
