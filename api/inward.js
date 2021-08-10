@@ -87,7 +87,8 @@ router.get("/relations", async (req, res, next) => {
       where: whereClauseWithoutDate,
       attributes: [
         ["warehouseId", "id"],
-        [Sequelize.col("warehouse"), "name"]
+        [Sequelize.col("warehouse"), "name"],
+        [Sequelize.col("warehouse"), "businessWarehouseCode"]
       ]
     }),
     products: await Product.findAll({ where, include: [{ model: UOM }] }),
