@@ -18,7 +18,7 @@ const {
   OrderGroup
 } = require("../models");
 const config = require("../config");
-const { Op, Sequelize } = require("sequelize");
+const { Op, Sequelize, fn, col } = require("sequelize");
 const { digitize } = require("../services/common.services");
 const { RELATION_TYPES } = require("../enums");
 
@@ -209,6 +209,85 @@ router.get("/relations", async (req, res, next) => {
     message: "respond with a resource",
     relations
   });
+});
+
+router.get("/inventory", async (req, res, next) => {
+  if (req.query.customerId && req.query.warehouseId && req.query.productId) {
+    const inventory = await Inventory.findOne({
+      where: {
+        customerId: req.query.customerId,
+        warehouseId: req.query.warehouseId,
+        productId: req.query.productId
+      }
+    });
+    res.json({
+      success: true,
+      message: "respond with a resource",
+      inventory
+    });
+  } else
+    res.json({
+      success: false,
+      message: "No inventory found"
+    });
+});
+
+router.get("/warehouses", async (req, res, next) => {
+  if (req.query.customerId) {
+    const inventories = await Inventory.findAll({
+      where: {
+        customerId: req.query.customerId
+      },
+      attributes: ["warehouseId", fn("COUNT", col("warehouseId"))],
+      include: [
+        {
+          model: Warehouse
+        }
+      ],
+      group: "warehouseId"
+    });
+    res.json({
+      success: true,
+      message: "respond with a resource",
+      warehouses: inventories.map(inventory => inventory.Warehouse)
+    });
+  } else
+    res.json({
+      success: false,
+      message: "No inventory found"
+    });
+});
+
+router.get("/products", async (req, res, next) => {
+  if (req.query.customerId) {
+    const inventories = await Inventory.findAll({
+      where: {
+        customerId: req.query.customerId,
+        warehouseId: req.query.warehouseId,
+        availableQuantity: {
+          [Op.ne]: 0
+        }
+      },
+      attributes: ["productId", fn("COUNT", col("productId"))],
+      include: [
+        {
+          model: Product,
+          include: [{ model: UOM }]
+        }
+      ],
+      group: "productId"
+    });
+    res.json({
+      success: true,
+      message: "respond with a resource",
+      products: inventories.map(inventory => inventory.Product)
+    });
+  } else
+    res.json({
+      products: [],
+      success: false,
+      message: "No inventory found"
+    });
 });
 
 router.get("/:id", async (req, res, next) => {
