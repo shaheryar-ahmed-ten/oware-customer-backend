@@ -25,6 +25,9 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "outwardId",
         as: "Inventories"
       });
+      ProductOutward.hasMany(models.OutwardGroup, {
+        foreignKey: "outwardId"
+      });
     }
   }
   ProductOutward.init(

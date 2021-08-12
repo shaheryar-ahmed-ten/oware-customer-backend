@@ -15,87 +15,141 @@ const {
   Inventory,
   Company,
   sequelize,
-  OrderGroup
+  OrderGroup,
+  User
 } = require("../models");
 const config = require("../config");
 const { Op, Sequelize, fn, col } = require("sequelize");
 const { digitize } = require("../services/common.services");
 const { RELATION_TYPES } = require("../enums");
 
-/* GET orders listing. */
+// /* GET orders listing. */
+// router.get("/", async (req, res, next) => {
+//   const limit = req.query.rowsPerPage || config.rowsPerPage;
+//   const offset = (req.query.page - 1 || 0) * limit;
+//   let where = {
+//     customerId: req.companyId
+//   };
+//   let having;
+//   if (req.query.days) {
+//     const currentDate = moment();
+//     const previousDate = moment().subtract(req.query.days, "days");
+//     where["createdAt"] = { [Op.between]: [previousDate, currentDate] };
+//   }
+
+//   if ("status" in req.query) {
+//     if (req.query.status === "0")
+//       // Pending
+//       having = Sequelize.literal(`sum(quantity) = 0`);
+//     if (req.query.status === "1")
+//       // Partially fulfilled
+//       having = Sequelize.literal(`sum(quantity) > 0 && sum(productOutwardQuantity) < dispatchOrderQuantity`);
+//     if (req.query.status === "2")
+//       // Fulfilled
+//       having = Sequelize.literal(`sum(quantity) = dispatchOrderQuantity`);
+//   }
+
+//   if ("warehouse" in req.query) {
+//     where["warehouseId"] = req.query.warehouse;
+//   }
+//   if ("product" in req.query) {
+//     where["productId"] = req.query.product;
+//   }
+//   if ("referenceId" in req.query) {
+//     where["referenceId"] = req.query.referenceId;
+//   }
+
+//   if (req.query.search)
+//     where[Op.or] = ["product", "referenceId", "warehouse"].map(key => ({
+//       [key]: { [Op.like]: "%" + req.query.search + "%" }
+//     }));
+
+//   const response = await OutboundStat.findAndCountAll({
+//     attributes: [
+//       "referenceId",
+//       "shipmentDate",
+//       "internalIdForBusiness",
+//       "dispatchOrderId",
+//       "warehouse",
+//       "customer",
+//       "dispatchOrderQuantity",
+//       [Sequelize.fn("sum", Sequelize.col("quantity")), "outwardQuantity"],
+//       ["dispatchOrderId", "productOutwardId"],
+//       [Sequelize.fn("count", Sequelize.col("productOutwardId")), "outwardCount"]
+//     ],
+//     where,
+//     limit,
+//     offset,
+//     having,
+//     group: ["dispatchOrderId", "dispatchOrderQuantity", "warehouse", "customer"]
+//   });
+//   console.log("response", response);
+//   for (const row of response.rows) {
+//     console.log("row", row.dataValues);
+//   }
+//   res.json({
+//     success: true,
+//     message: "respond with a resource",
+//     data: response.rows,
+//     count: response.count.length,
+//     pages: Math.ceil(response.count.length / limit)
+//   });
+// });
+
+// /* GET dispatchOrders listing. */
 router.get("/", async (req, res, next) => {
   const limit = req.query.rowsPerPage || config.rowsPerPage;
   const offset = (req.query.page - 1 || 0) * limit;
   let where = {
-    customerId: req.companyId
+    // userId: req.userId
   };
-  let having;
-  if (req.query.days) {
-    const currentDate = moment();
-    const previousDate = moment().subtract(req.query.days, "days");
-    where["createdAt"] = { [Op.between]: [previousDate, currentDate] };
-  }
-
-  if ("status" in req.query) {
-    if (req.query.status === "0")
-      // Pending
-      having = Sequelize.literal(`sum(quantity) = 0`);
-    if (req.query.status === "1")
-      // Partially fulfilled
-      having = Sequelize.literal(`sum(quantity) > 0 && sum(productOutwardQuantity) < dispatchOrderQuantity`);
-    if (req.query.status === "2")
-      // Fulfilled
-      having = Sequelize.literal(`sum(quantity) = dispatchOrderQuantity`);
-  }
-
-  if ("warehouse" in req.query) {
-    where["warehouseId"] = req.query.warehouse;
-  }
-  if ("product" in req.query) {
-    where["productId"] = req.query.product;
-  }
-  if ("referenceId" in req.query) {
-    where["referenceId"] = req.query.referenceId;
-  }
-
   if (req.query.search)
-    where[Op.or] = ["product", "referenceId", "warehouse"].map(key => ({
-      [key]: { [Op.like]: "%" + req.query.search + "%" }
-    }));
+    where[Op.or] = ["$Inventories.Product.name$", "$Inventories.Company.name$", "$Inventories.Warehouse.name$"].map(
+      key => ({ [key]: { [Op.like]: "%" + req.query.search + "%" } })
+    );
 
-  const response = await OutboundStat.findAndCountAll({
-    attributes: [
-      "referenceId",
-      "shipmentDate",
-      "internalIdForBusiness",
-      "dispatchOrderId",
-      "warehouse",
-      "customer",
-      "dispatchOrderQuantity",
-      [Sequelize.fn("sum", Sequelize.col("quantity")), "outwardQuantity"],
-      ["dispatchOrderId", "productOutwardId"],
-      [Sequelize.fn("count", Sequelize.col("productOutwardId")), "outwardCount"]
+  const { companyId } = await User.findOne({ where: { id: req.userId } });
+  const response = await DispatchOrder.findAndCountAll({
+    include: [
+      {
+        model: Inventory,
+        as: "Inventory",
+        include: [{ model: Product, include: [{ model: UOM }] }, Company, Warehouse],
+        where: { customerId: companyId },
+        required: true
+      },
+      {
+        model: Inventory,
+        as: "Inventories",
+        include: [{ model: Product, include: [{ model: UOM }] }, Company, Warehouse],
+        where: { customerId: companyId },
+        required: true
+      },
+      {
+        model: ProductOutward,
+        as: "ProductOutwards",
+        include: ["OutwardGroups", "Vehicle"],
+        attributes: ["quantity", "referenceId", "internalIdForBusiness"],
+        required: false
+      }
     ],
+    order: [["updatedAt", "DESC"]],
+    subQuery: false,
     where,
     limit,
-    offset,
-    having,
-    group: ["dispatchOrderId", "dispatchOrderQuantity", "warehouse", "customer"]
+    offset
   });
+
   res.json({
     success: true,
     message: "respond with a resource",
     data: response.rows,
-    count: response.count.length,
-    pages: Math.ceil(response.count.length / limit)
+    pages: Math.ceil(response.count / limit)
   });
 });
 
 /* POST create new dispatchOrder. */
 router.post("/", async (req, res, next) => {
-  req.body.inventories.forEach(item => {
-    console.log("item", item);
-  });
   let message = "New dispatchOrder registered";
   let dispatchOrder;
   req.body.inventories = req.body.inventories || [{ id: req.body.inventoryId, quantity: req.body.quantity }];
@@ -146,14 +200,6 @@ router.post("/", async (req, res, next) => {
         req.body.inventories.map(_inventory => {
           return Inventory.findByPk(_inventory.id, { transaction }).then(inventory => {
             if (!inventory && !_inventory.id) throw new Error("Inventory is not available");
-            console.log(
-              "inventory.id",
-              _inventory.id,
-              "_inventory.quantity",
-              _inventory.quantity,
-              "inventory.availableQuantity",
-              inventory.availableQuantity
-            );
             if (_inventory.quantity > inventory.availableQuantity)
               throw new Error("Cannot create orders above available quantity");
             try {
