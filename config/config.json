@@ -1,9 +1,9 @@
 {
   "development": {
-    "username": "root",
-    "password": "root",
-    "database": "oware_dev",
-    "host": "127.0.0.1",
+    "username": "oware",
+    "password": "UdhPOW2&4hSHd^!U%#",
+    "database": "oware_stg_db",
+    "host": "oware-stg-db.c3c8wtqydg6s.us-east-1.rds.amazonaws.com",
     "dialect": "mysql"
   },
   "test": {
@@ -22,21 +22,8 @@
   },
   "misc": {
     "rowsPerPage": 10,
-    "customerTypes": [
-      "Manufacturer",
-      "Distributor",
-      "Importer",
-      "Trader",
-      "Wholesaler",
-      "Retailer"
-    ],
-    "vehicleTypes":[
-      "Bike",
-      "Mini Truck",
-      "Light Truck",
-      "Heavy Truck",
-      "Refregerated Truck"
-    ],
+    "customerTypes": ["Manufacturer", "Distributor", "Importer", "Trader", "Wholesaler", "Retailer"],
+    "vehicleTypes": ["Bike", "Mini Truck", "Light Truck", "Heavy Truck", "Refregerated Truck"],
     "dbLogging": false
   }
 }
