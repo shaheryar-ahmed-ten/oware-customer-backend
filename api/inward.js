@@ -72,7 +72,6 @@ router.get("/", async (req, res, next) => {
 
 router.get("/relations", async (req, res, next) => {
   let where = { isActive: true };
-  console.log("req.companyId", req.companyId);
   const whereClauseWithoutDate = { customerId: req.companyId };
   const whereClauseWithoutDateAndQuantity = {
     customerId: req.companyId,
@@ -151,7 +150,6 @@ router.post("/", async (req, res, next) => {
       const numberOfinternalIdForBusiness = digitize(productInward.id, 6);
       productInward.internalIdForBusiness = req.body.internalIdForBusiness + numberOfinternalIdForBusiness;
       await productInward.save({ transaction });
-      req.body.products.map(product => console.log("product", product));
 
       await InwardGroup.bulkCreate(
         req.body.products.map(product => ({

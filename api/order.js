@@ -32,17 +32,27 @@ router.get("/", async (req, res, next) => {
       // userId: req.userId
     };
     if (req.query.search)
-      where[Op.or] = ["$Inventory.Company.name$", "$Inventory.Warehouse.name$"].map(key => ({
+      where[Op.or] = ["$Inventory.Warehouse.name$", "internalIdForBusiness", "referenceId"].map(key => ({
         [key]: { [Op.like]: "%" + req.query.search + "%" }
       }));
-
+    if (req.query.days) {
+      const endDate = new Date();
+      const startDate = new Date(new Date().setDate(new Date().getDate() - req.query.days));
+      where[Op.or] = ["$Inventory.createdAt$"].map(key => ({
+        [key]: { [Op.between]: [startDate, endDate] }
+      }));
+    }
     const { companyId } = await User.findOne({ where: { id: req.userId } });
     const response = await DispatchOrder.findAndCountAll({
       include: [
         {
           model: Inventory,
           as: "Inventory",
-          include: [{ model: Product, include: [{ model: UOM }] }, Company, Warehouse],
+          include: [
+            { model: Product, include: [{ model: UOM }] },
+            { model: Company, required: true },
+            { model: Warehouse, required: true }
+          ],
           where: { customerId: companyId },
           required: true
         },

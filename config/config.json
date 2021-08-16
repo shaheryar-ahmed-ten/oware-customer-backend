@@ -1,9 +1,9 @@
 {
   "development": {
-    "username": "oware",
-    "password": "UdhPOW2&4hSHd^!U%#",
-    "database": "oware_stg_db",
-    "host": "oware-stg-db.c3c8wtqydg6s.us-east-1.rds.amazonaws.com",
+    "username": "root",
+    "password": "root",
+    "database": "oware_dev",
+    "host": "localhost",
     "dialect": "mysql"
   },
   "test": {
