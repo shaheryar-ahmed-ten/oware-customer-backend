@@ -1,7 +1,9 @@
 "use strict";
 const { Model } = require("sequelize");
 const bcrypt = require("bcrypt");
-
+const {
+  DISPATCH_ORDER: { STATUS }
+} = require("../enums");
 module.exports = (sequelize, DataTypes) => {
   class DispatchOrder extends Model {
     /**
@@ -71,6 +73,12 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: { notEmpty: { msg: "Please select inventory" } }
+      },
+      status: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: STATUS.PENDING,
+        validate: { notEmpty: { msg: "status cannot be empty" } }
       }
     },
     {
