@@ -36,15 +36,9 @@ router.get("/", async (req, res, next) => {
         [key]: { [Op.like]: "%" + req.query.search + "%" }
       }));
     if (req.query.days) {
-      const endDate = new Date();
-      const startDate = new Date(new Date().setDate(new Date().getDate() - req.query.days));
-      console.log("startDate", startDate), console.log("endDate", endDate);
-      where[Op.or] = ["$Inventory.createdAt$"].map(key => ({
-        [key]: {
-          [Op.gte]: startDate,
-          [Op.lte]: endDate
-        }
-      }));
+      const currentDate = moment();
+      const previousDate = moment().subtract(req.query.days, "days");
+      where["createdAt"] = { [Op.between]: [previousDate, currentDate] };
     }
     if (req.query.status)
       where[Op.or] = ["status"].map(key => ({
