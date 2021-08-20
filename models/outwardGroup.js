@@ -43,6 +43,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: { notEmpty: { msg: "Outward cannot be empty" } }
+      },
+      availableQuantity: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: { notEmpty: { msg: "available quantity cannot be empty" } }
       }
     },
     {
