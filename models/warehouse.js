@@ -1,6 +1,6 @@
-'use strict';
-const { Model } = require('sequelize');
-const bcrypt = require('bcrypt');
+"use strict";
+const { Model } = require("sequelize");
+const bcrypt = require("bcrypt");
 
 module.exports = (sequelize, DataTypes) => {
   class Warehouse extends Model {
@@ -12,32 +12,38 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       Warehouse.belongsTo(models.User, {
-        foreignKey: 'userId'
+        foreignKey: "userId"
       });
-    };
-  };
-  const model = Warehouse.init({
-    userId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      validate: { notEmpty: true }
+    }
+  }
+  const model = Warehouse.init(
+    {
+      userId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: { notEmpty: true }
+      },
+      name: {
+        type: DataTypes.STRING,
+        unique: true
+      },
+      businessWarehouseCode: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      address: DataTypes.STRING,
+      city: DataTypes.STRING,
+      isActive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
+      }
     },
-    name: DataTypes.STRING,
-    businessWarehouseCode: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
-    address: DataTypes.STRING,
-    city: DataTypes.STRING,
-    isActive: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true
-    },
-  }, {
-    sequelize,
-    paranoid: true,
-    modelName: 'Warehouse',
-  });
+    {
+      sequelize,
+      paranoid: true,
+      modelName: "Warehouse"
+    }
+  );
 
   return Warehouse;
 };

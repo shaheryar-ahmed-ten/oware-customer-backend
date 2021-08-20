@@ -38,10 +38,18 @@ router.get("/", async (req, res, next) => {
     if (req.query.days) {
       const endDate = new Date();
       const startDate = new Date(new Date().setDate(new Date().getDate() - req.query.days));
+      console.log("startDate", startDate), console.log("endDate", endDate);
       where[Op.or] = ["$Inventory.createdAt$"].map(key => ({
-        [key]: { [Op.between]: [startDate, endDate] }
+        [key]: {
+          [Op.gte]: startDate,
+          [Op.lte]: endDate
+        }
       }));
     }
+    if (req.query.status)
+      where[Op.or] = ["status"].map(key => ({
+        [key]: { [Op.eq]: req.query.status }
+      }));
     const { companyId } = await User.findOne({ where: { id: req.userId } });
     const response = await DispatchOrder.findAndCountAll({
       include: [
