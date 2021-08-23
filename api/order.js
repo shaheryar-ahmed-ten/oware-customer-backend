@@ -179,17 +179,18 @@ router.post("/", async (req, res, next) => {
 });
 
 router.get("/relations", async (req, res, next) => {
+  console.log("req.companyId", req.userId);
   const whereClauseWithoutDate = { customerId: req.companyId };
   const relations = {
-    warehouses: await OutboundStat.findAll({
-      group: ["warehouseId"],
-      plain: false,
-      where: whereClauseWithoutDate,
-      attributes: [
-        ["warehouseId", "id"],
-        [Sequelize.col("warehouse"), "name"]
-      ]
-    }),
+    warehouses: await sequelize
+      .query(
+        `select w.id,w.name from DispatchOrders do 
+      inner join Inventories i on do.inventoryId = i.id 
+      inner join Warehouses w on i.warehouseId = w.id 
+      where do.userId = ${req.userId}
+      group by w.name,w.id`
+      )
+      .then(item => item[0]),
     products: await OutboundStat.findAll({
       group: ["productId"],
       plain: false,

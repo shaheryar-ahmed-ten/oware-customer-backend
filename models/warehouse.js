@@ -14,6 +14,9 @@ module.exports = (sequelize, DataTypes) => {
       Warehouse.belongsTo(models.User, {
         foreignKey: "userId"
       });
+      Warehouse.hasMany(models.Inventory, {
+        foreignKey: "warehouseId"
+      });
     }
   }
   const model = Warehouse.init(
