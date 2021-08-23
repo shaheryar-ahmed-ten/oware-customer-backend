@@ -30,9 +30,9 @@ module.exports = Object.freeze({
   },
   DISPATCH_ORDER: {
     STATUS: {
-      PENDING: "Pending",
-      PARTIALLY_FULFILLED: "Partially fulfilled",
-      FULFILLED: "Fulfilled"
+      PENDING: 0,
+      PARTIALLY_FULFILLED: 1,
+      FULFILLED: 2
     }
   }
 });

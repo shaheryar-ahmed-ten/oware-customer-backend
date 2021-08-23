@@ -45,8 +45,8 @@ router.get("/", async (req, res, next) => {
         [key]: { [Op.eq]: req.query.status }
       }));
     if (req.query.warehouse)
-      where[Op.or] = ["$Inventory.Warehouse.name$"].map(key => ({
-        [key]: { [Op.like]: "%" + req.query.warehouse + "%" }
+      where[Op.or] = ["$Inventory.Warehouse.id$"].map(key => ({
+        [key]: { [Op.eq]: req.query.warehouse }
       }));
     const { companyId } = await User.findOne({ where: { id: req.userId } });
     const response = await DispatchOrder.findAndCountAll({
