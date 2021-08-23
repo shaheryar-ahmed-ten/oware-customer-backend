@@ -60,8 +60,8 @@ router.get('/', async (req, res) => {
       select count(*) as pendingOrders from
       (select dispatchOrderId as id,
         count(id) as totalOutwards,
-        dispatchOrderQuantity > sum(quantity) as isPendingOrder
-        from OutboundStats where customerId = ${req.companyId} group by dispatchOrderId)
+        dispatchOrderQuantity > sum(productOutwardQuantity) as isPendingOrder
+        from OutboundQueryForPending where customerId = ${req.companyId} group by dispatchOrderId)
         as orders where isPendingOrder = 1;
     `, {
       plain: true
