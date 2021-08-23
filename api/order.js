@@ -186,7 +186,7 @@ router.get("/relations", async (req, res, next) => {
       plain: false,
       where: whereClauseWithoutDate,
       attributes: [
-        ["warehouseId", "id", "businessWarehouseCode"],
+        ["warehouseId", "id"],
         [Sequelize.col("warehouse"), "name"]
       ]
     }),
