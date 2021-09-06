@@ -19,14 +19,15 @@ router.get('/', async (req, res, next) => {
     }
 
     const response = await Inventory.findAll({
-        include: [{ model: Product, attributes: ['name'], include: [{ model: Category, attributes: ['name'] }, { model: Brand, attributes: ['name'] }, { model: UOM, attributes: ['name'] }] }],
+        include: [{ model: Product, attributes: ['name'], include: [{ model: Category, attributes: ['name'] }, { model: Brand, attributes: ['name'] }, { model: UOM, attributes: ['name'] }] },{model: Warehouse, attributes: ['name']}],
         attributes: [
             ['productId', 'id'],
             [Sequelize.fn('sum', Sequelize.col('committedQuantity')), 'committedQuantity'],
-            [Sequelize.fn('sum', Sequelize.col('availableQuantity')), 'availableQuantity']
+            [Sequelize.fn('sum', Sequelize.col('availableQuantity')), 'availableQuantity'],
+            [Sequelize.fn('sum', Sequelize.col('dispatchedQuantity')), 'dispatchedQuantity']
         ],
         where, offset, limit,
-        group: ['productId']
+        group: ['productId','warehouseId']
     })
     const count = await Inventory.count({
         distinct: true,
@@ -71,7 +72,7 @@ router.get('/:id', async (req, res, next) => {
     };
     const response = await Inventory.findAndCountAll({
         attributes: [
-            'availableQuantity', 'committedQuantity'
+            'availableQuantity', 'committedQuantity','dispatchedQuantity'
         ],
         include: [{
             model: Product, attributes: []
