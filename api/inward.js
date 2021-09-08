@@ -59,7 +59,8 @@ router.get("/", async (req, res, next) => {
       }
     ],
     order: [["createdAt", "DESC"]],
-    where
+    where,
+    distinct: true
   });
   res.json({
     success: true,
@@ -71,7 +72,7 @@ router.get("/", async (req, res, next) => {
 });
 
 router.get("/relations", async (req, res, next) => {
-  let where = { isActive: true };
+  let where = { isActive: true, "$ProductInwards.customerId$": req.companyId };
   const whereClauseWithoutDate = { customerId: req.companyId };
   const whereClauseWithoutDateAndQuantity = {
     customerId: req.companyId,
@@ -90,7 +91,7 @@ router.get("/relations", async (req, res, next) => {
         [Sequelize.col("warehouse"), "businessWarehouseCode"]
       ]
     }),
-    products: await Product.findAll({ where, include: [{ model: UOM }] }),
+    products: await Product.findAll({ where, include: [{ model: ProductInward }, { model: UOM }] }),
     dispatchOrders: await DispatchOrder.findAll({
       include: [
         {
