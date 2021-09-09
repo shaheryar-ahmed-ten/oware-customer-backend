@@ -1,9 +1,8 @@
 "use strict";
 const { Model } = require("sequelize");
-const bcrypt = require("bcrypt");
-
+const config = require("../config");
 module.exports = (sequelize, DataTypes) => {
-  class Warehouse extends Model {
+  class VehicleType extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -11,15 +10,12 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      Warehouse.belongsTo(models.User, {
-        foreignKey: "userId"
-      });
-      Warehouse.hasMany(models.Inventory, {
-        foreignKey: "warehouseId"
+      VehicleType.hasMany(models.Car, {
+        foreignKey: "vehicleTypeId",
       });
     }
   }
-  const model = Warehouse.init(
+  VehicleType.init(
     {
       userId: {
         type: DataTypes.INTEGER,
@@ -28,14 +24,10 @@ module.exports = (sequelize, DataTypes) => {
       },
       name: {
         type: DataTypes.STRING,
-        unique: true
+        unique: true,
+        allowNull: false,
+        validate: { notEmpty: { msg: "Please enter a make name" } },
       },
-      businessWarehouseCode: {
-        type: DataTypes.STRING,
-        allowNull: true
-      },
-      address: DataTypes.STRING,
-      city: DataTypes.STRING,
       isActive: {
         type: DataTypes.BOOLEAN,
         defaultValue: true
@@ -44,9 +36,9 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       paranoid: true,
-      modelName: "Warehouse"
+      modelName: "VehicleType",
+      timestamps: true,
     }
   );
-
-  return Warehouse;
+  return VehicleType;
 };

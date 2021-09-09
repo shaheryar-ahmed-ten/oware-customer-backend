@@ -1,6 +1,6 @@
-'use strict';
-const { Model } = require('sequelize');
-const bcrypt = require('bcrypt');
+"use strict";
+const { Model } = require("sequelize");
+const bcrypt = require("bcrypt");
 
 module.exports = (sequelize, DataTypes) => {
   class Inventory extends Model {
@@ -12,53 +12,61 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       Inventory.belongsTo(models.Product, {
-        foreignKey: 'productId'
+        foreignKey: "productId"
       });
       Inventory.belongsTo(models.Warehouse, {
-        foreignKey: 'warehouseId'
+        foreignKey: "warehouseId"
       });
       Inventory.belongsTo(models.Company, {
-        foreignKey: 'customerId'
+        foreignKey: "customerId"
       });
       Inventory.hasMany(models.DispatchOrder, {
-        foreignKey: 'inventoryId'
+        foreignKey: "inventoryId"
       });
-    };
-  };
-  Inventory.init({
-    availableQuantity: DataTypes.INTEGER,
-    totalInwardQuantity: DataTypes.INTEGER,
-    committedQuantity: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0
+      Inventory.belongsToMany(models.DispatchOrder, {
+        through: models.OrderGroup,
+        foreignKey: "inventoryId"
+      });
+      Inventory.belongsToMany(models.ProductOutward, {
+        through: models.OutwardGroup,
+        foreignKey: "inventoryId"
+      });
+    }
+  }
+  Inventory.init(
+    {
+      availableQuantity: DataTypes.INTEGER,
+      totalInwardQuantity: DataTypes.INTEGER,
+      committedQuantity: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+      },
+      dispatchedQuantity: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+      },
+      productId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: { notEmpty: { msg: "Product cannot be empty" } }
+      },
+      customerId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: { notEmpty: { msg: "Customer cannot be empty" } }
+      },
+      warehouseId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: { notEmpty: { msg: "Warehouse cannot be empty" } }
+      }
     },
-    dispatchedQuantity: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0
-    },
-    productId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      validate: { notEmpty: { msg: 'Product cannot be empty' } }
-
-    },
-    customerId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      validate: { notEmpty: { msg: 'Company cannot be empty' } }
-
-    },
-    warehouseId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      validate: { notEmpty: { msg: 'Warehouse cannot be empty' } }
-
-    },
-  }, {
-    sequelize,
-    paranoid: true,
-    modelName: 'Inventory',
-  });
+    {
+      sequelize,
+      paranoid: true,
+      modelName: "Inventory"
+    }
+  );
 
   return Inventory;
 };

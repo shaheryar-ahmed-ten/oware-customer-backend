@@ -1,8 +1,8 @@
 "use strict";
 const { Model } = require("sequelize");
-const { VEHICLE_TYPES } = require("../enums");
+const config = require("../config");
 module.exports = (sequelize, DataTypes) => {
-  class Vehicle extends Model {
+  class Driver extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -10,43 +10,34 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      Vehicle.belongsTo(models.User, {
+      Driver.belongsTo(models.User, {
         foreignKey: "userId"
       });
-      Vehicle.hasOne(models.ProductOutward, {
-        foreignKey: "vehicleId"
-      });
-      Vehicle.belongsTo(models.Driver, {
+      Driver.hasMany(models.Vehicle, {
         foreignKey: "driverId"
       });
-      Vehicle.belongsTo(models.File, {
-        foreignKey: "runningPaperId",
-        as: "RunningPaper"
+      Driver.hasMany(models.Ride, {
+        foreignKey: "driverId"
       });
-      Vehicle.belongsTo(models.File, {
-        foreignKey: "routePermitId",
-        as: "RoutePermit"
+      Driver.belongsTo(models.File, {
+        foreignKey: "drivingLicenseId",
+        as: "DrivingLicense"
       });
-      Vehicle.belongsTo(models.File, {
+      Driver.belongsTo(models.File, {
+        foreignKey: "cnicId",
+        as: "Cnic"
+      });
+      Driver.belongsTo(models.File, {
         foreignKey: "photoId",
         as: "Photo"
       });
-      Vehicle.belongsTo(models.Company, {
+      Driver.belongsTo(models.Company, {
         foreignKey: "companyId",
         as: "Vendor"
       });
-      Vehicle.belongsTo(models.Car, {
-        foreignKey: "carId"
-      });
-      Vehicle.belongsTo(models.Driver, {
-        foreignKey: "driverId"
-      });
-      Vehicle.belongsTo(models.Car, {
-        foreignKey: "carId"
-      });
     }
   }
-  Vehicle.init(
+  Driver.init(
     {
       userId: {
         type: DataTypes.INTEGER,
@@ -58,33 +49,37 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         validate: { notEmpty: { msg: "Please enter vendor name" } }
       },
-      driverId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        validate: { notEmpty: { msg: "Please enter driver name" } }
-      },
-      registrationNumber: {
+      name: {
         type: DataTypes.STRING,
-        unique: true,
         allowNull: false,
-        validate: { notEmpty: { msg: "Please enter a vehicle number" } }
+        validate: { notEmpty: { msg: "Please enter name" } }
       },
-      carId: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-        validate: { notEmpty: { msg: "Please enter car" } }
+      phone: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: { notEmpty: { msg: "Please enter phone number" } }
       },
       photoId: {
         type: DataTypes.INTEGER,
         allowNull: true
       },
-      runningPaperId: {
+      cnicId: {
         type: DataTypes.INTEGER,
         allowNull: true
       },
-      routePermitId: {
+      cnicNumber: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: { notEmpty: { msg: "Please enter cnic number" } }
+      },
+      drivingLicenseId: {
         type: DataTypes.INTEGER,
         allowNull: true
+      },
+      drivingLicenseNumber: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: { notEmpty: { msg: "Please enter driving license number" } }
       },
       isActive: {
         type: DataTypes.BOOLEAN,
@@ -94,9 +89,9 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       paranoid: true,
-      modelName: "Vehicle",
+      modelName: "Driver",
       timestamps: true
     }
   );
-  return Vehicle;
+  return Driver;
 };

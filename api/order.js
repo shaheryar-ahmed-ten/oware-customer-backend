@@ -1,109 +1,325 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const moment = require('moment')
-const { Warehouse, Product, UOM, OutboundStat, DispatchOrder, ProductOutward, Vehicle } = require('../models')
-const config = require('../config');
-const { Op, Sequelize } = require('sequelize');
+const moment = require("moment");
+const {
+  Warehouse,
+  Product,
+  UOM,
+  OutboundStat,
+  DispatchOrder,
+  ProductOutward,
+  Vehicle,
+  Car,
+  CarMake,
+  CarModel,
+  Inventory,
+  Company,
+  sequelize,
+  OrderGroup,
+  User
+} = require("../models");
+const config = require("../config");
+const { Op, Sequelize, fn, col } = require("sequelize");
+const { digitize } = require("../services/common.services");
+const { RELATION_TYPES } = require("../enums");
 
-/* GET orders listing. */
-router.get('/', async (req, res, next) => {
-  const limit = req.query.rowsPerPage || config.rowsPerPage;
-  const offset = (req.query.page - 1 || 0) * limit;
-  let where = {
-    customerId: req.companyId
-  };
-  let having;
-  if (req.query.days) {
-    const currentDate = moment();
-    const previousDate = moment().subtract(req.query.days, 'days');
-    where['createdAt'] = { [Op.between]: [previousDate, currentDate] };
-  }
+// /* GET dispatchOrders listing. */
+router.get("/", async (req, res, next) => {
+  try {
+    const limit = req.query.rowsPerPage || config.rowsPerPage;
+    const offset = (req.query.page - 1 || 0) * limit;
+    let where = {
+      // userId: req.userId
+    };
+    if (req.query.search)
+      where[Op.or] = ["$Inventory.Warehouse.name$", "internalIdForBusiness", "referenceId"].map(key => ({
+        [key]: { [Op.like]: "%" + req.query.search + "%" }
+      }));
+    if (req.query.days) {
+      const currentDate = moment();
+      const previousDate = moment().subtract(req.query.days, "days");
+      where["createdAt"] = { [Op.between]: [previousDate, currentDate] };
+    }
+    if (req.query.status)
+      where[Op.or] = ["status"].map(key => ({
+        [key]: { [Op.eq]: req.query.status }
+      }));
+    if (req.query.warehouse)
+      where[Op.or] = ["$Inventory.Warehouse.id$"].map(key => ({
+        [key]: { [Op.eq]: req.query.warehouse }
+      }));
+    const { companyId } = await User.findOne({ where: { id: req.userId } });
+    const response = await DispatchOrder.findAndCountAll({
+      include: [
+        {
+          model: Inventory,
+          as: "Inventory",
+          include: [
+            { model: Product, include: [{ model: UOM }] },
+            { model: Company, required: true },
+            { model: Warehouse, required: true }
+          ],
+          where: { customerId: companyId },
+          required: true
+        },
+        {
+          model: Inventory,
+          as: "Inventories",
+          include: [{ model: Product, include: [{ model: UOM }] }, Company, Warehouse],
+          where: { customerId: companyId },
+          required: true
+        }
+      ],
+      order: [["updatedAt", "DESC"]],
+      // subQuery: false,
+      where,
+      limit,
+      offset,
+      distinct: true
+    });
+    for (const { dataValues } of response.rows) {
+      dataValues["ProductOutwards"] = await ProductOutward.findAll({
+        include: ["OutwardGroups", "Vehicle"],
+        attributes: ["quantity", "referenceId", "internalIdForBusiness"],
+        required: false,
+        where: { dispatchOrderId: dataValues.id }
+      });
+    }
 
-  if ('status' in req.query) {
-    if (req.query.status === '0') // Pending
-      having = Sequelize.literal(`sum(productOutwardQuantity) = 0`);
-    if (req.query.status === '1') // Partially fulfilled
-      having = Sequelize.literal(`sum(productOutwardQuantity) > 0 && sum(productOutwardQuantity) < dispatchOrderQuantity`);
-    if (req.query.status === '2') // Fulfilled
-      having = Sequelize.literal(`sum(productOutwardQuantity) = dispatchOrderQuantity`);
+    res.json({
+      success: true,
+      message: "respond with a resource",
+      data: response.rows,
+      count: response.count,
+      pages: Math.ceil(response.count / limit)
+    });
+  } catch (error) {
+    console.log("err", error);
+    res.json(error);
   }
-
-  if('warehouse' in req.query){
-    where = {'warehouseId':req.query.warehouse}
-  }
-  if('product' in req.query){
-    where = {'productId':req.query.product}
-  }
-  if('referenceId' in req.query){
-    where = {'referenceId':req.query.referenceId}
-  }
-
-  if (req.query.search) where[Op.or] = ['product', 'referenceId', 'warehouse'].map(key => ({
-    [key]: { [Op.like]: '%' + req.query.search + '%' }
-  }));
-
-  const response = await OutboundStat.findAndCountAll({
-    attributes: [
-      'referenceId', 'shipmentDate', 'internalIdForBusiness',
-      'dispatchOrderId', 'warehouse', 'customer', 'product', 'dispatchOrderQuantity',
-      [Sequelize.fn('sum', Sequelize.col('productOutwardQuantity')), 'outwardQuantity'],
-      ['dispatchOrderId', 'productOutwardId'],
-      [Sequelize.fn('count', Sequelize.col('productOutwardId')), 'outwardCount']
-    ],
-    orderBy: [['createdAt', 'DESC']],
-    where, limit, offset, having,
-    group: ['dispatchOrderId', 'dispatchOrderQuantity', 'warehouse', 'customer', 'product']
-  });
-  res.json({
-    success: true,
-    message: 'respond with a resource',
-    data: response.rows,
-    count: response.count.length,
-    pages: Math.ceil(response.count.length / limit)
-  });
 });
 
-router.get('/relations', async (req, res, next) => {
+/* POST create new dispatchOrder. */
+router.post("/", async (req, res, next) => {
+  let message = "New dispatchOrder registered";
+  let dispatchOrder;
+  req.body.inventories = req.body.inventories || [{ id: req.body.inventoryId, quantity: req.body.quantity }];
+  req.body.customerId = req.userId;
+  try {
+    await sequelize.transaction(async transaction => {
+      dispatchOrder = await DispatchOrder.create(
+        {
+          userId: req.userId,
+          ...req.body
+        },
+        { transaction }
+      );
+      const numberOfInternalIdForBusiness = digitize(dispatchOrder.id, 6);
+      dispatchOrder.internalIdForBusiness = req.body.internalIdForBusiness + numberOfInternalIdForBusiness;
+      let sumOfComitted = [];
+      let comittedAcc;
+      req.body.inventories.forEach(Inventory => {
+        let quantity = parseInt(Inventory.quantity);
+        sumOfComitted.push(quantity);
+      });
+      comittedAcc = sumOfComitted.reduce((acc, po) => {
+        return acc + po;
+      });
+      dispatchOrder.quantity = comittedAcc;
+      await dispatchOrder.save({ transaction });
+      let inventoryIds = [];
+      inventoryIds = req.body.inventories.map(inventory => {
+        return inventory.id;
+      });
+      const toFindDuplicates = arry => arry.filter((item, index) => arry.indexOf(item) != index);
+      const duplicateElements = toFindDuplicates(inventoryIds);
+      if (duplicateElements.length != 0) {
+        throw new Error("Can not add same inventory twice");
+      }
+
+      await OrderGroup.bulkCreate(
+        req.body.inventories.map(inventory => ({
+          userId: req.userId,
+          orderId: dispatchOrder.id,
+          inventoryId: inventory.id,
+          quantity: inventory.quantity
+        })),
+        { transaction }
+      );
+
+      return Promise.all(
+        req.body.inventories.map(_inventory => {
+          return Inventory.findByPk(_inventory.id, { transaction }).then(inventory => {
+            if (!inventory && !_inventory.id) throw new Error("Inventory is not available");
+            if (_inventory.quantity > inventory.availableQuantity)
+              throw new Error("Cannot create orders above available quantity");
+            try {
+              inventory.committedQuantity += +_inventory.quantity;
+              inventory.availableQuantity -= +_inventory.quantity;
+              return inventory.save({ transaction });
+            } catch (err) {
+              throw new Error(err.errors.pop().message);
+            }
+          });
+        })
+      );
+    });
+    res.json({
+      success: true,
+      message,
+      data: dispatchOrder
+    });
+  } catch (err) {
+    console.log("err", err);
+    res.json({
+      success: false,
+      message: err.toString().replace("Error: ", "")
+    });
+  }
+});
+
+router.get("/relations", async (req, res, next) => {
+  console.log("req.companyId", req.userId);
   const whereClauseWithoutDate = { customerId: req.companyId };
   const relations = {
-    warehouses: await OutboundStat.findAll({
-      group: ['warehouseId'],
-      plain: false,
-      where: whereClauseWithoutDate,
-      attributes: [
-          ['warehouseId', 'id'],
-          [Sequelize.col('warehouse'), 'name']
-      ]}),
+    warehouses: await sequelize
+      .query(
+        `select w.id,w.name from DispatchOrders do 
+      inner join Inventories i on do.inventoryId = i.id 
+      inner join Warehouses w on i.warehouseId = w.id 
+      where do.userId = ${req.userId}
+      group by w.name,w.id`
+      )
+      .then(item => item[0]),
     products: await OutboundStat.findAll({
-      group: ['productId'],
+      group: ["productId"],
       plain: false,
       where: whereClauseWithoutDate,
       attributes: [
-          ['productId', 'id'],
-          [Sequelize.col('product'), 'name']
+        ["productId", "id"],
+        [Sequelize.col("product"), "name"]
       ]
-    }),
-  }
+    })
+  };
 
   res.json({
     success: true,
-    message: 'respond with a resource',
+    message: "respond with a resource",
     relations
   });
 });
 
-router.get('/:id', async (req, res, next) => {
+router.get("/inventory", async (req, res, next) => {
+  if (req.query.customerId && req.query.warehouseId && req.query.productId) {
+    const inventory = await Inventory.findOne({
+      where: {
+        customerId: req.query.customerId,
+        warehouseId: req.query.warehouseId,
+        productId: req.query.productId
+      }
+    });
+    res.json({
+      success: true,
+      message: "respond with a resource",
+      inventory
+    });
+  } else
+    res.json({
+      success: false,
+      message: "No inventory found"
+    });
+});
+
+router.get("/warehouses", async (req, res, next) => {
+  if (req.query.customerId) {
+    const inventories = await Inventory.findAll({
+      where: {
+        customerId: req.query.customerId
+      },
+      attributes: ["warehouseId", fn("COUNT", col("warehouseId"))],
+      include: [
+        {
+          model: Warehouse
+        }
+      ],
+      group: "warehouseId"
+    });
+    res.json({
+      success: true,
+      message: "respond with a resource",
+      warehouses: inventories.map(inventory => inventory.Warehouse)
+    });
+  } else
+    res.json({
+      success: false,
+      message: "No inventory found"
+    });
+});
+
+router.get("/products", async (req, res, next) => {
+  if (req.query.customerId) {
+    const inventories = await Inventory.findAll({
+      where: {
+        customerId: req.query.customerId,
+        warehouseId: req.query.warehouseId,
+        availableQuantity: {
+          [Op.ne]: 0
+        }
+      },
+      attributes: ["productId", fn("COUNT", col("productId"))],
+      include: [
+        {
+          model: Product,
+          include: [{ model: UOM }]
+        }
+      ],
+      group: "productId"
+    });
+    res.json({
+      success: true,
+      message: "respond with a resource",
+      products: inventories.map(inventory => inventory.Product)
+    });
+  } else
+    res.json({
+      products: [],
+      success: false,
+      message: "No inventory found"
+    });
+});
+
+router.get("/:id", async (req, res, next) => {
   const limit = req.query.rowsPerPage || config.rowsPerPage;
   const offset = (req.query.page - 1 || 0) * limit;
   try {
     let response = await DispatchOrder.findAndCountAll({
-
+      distinct: true,
       where: { id: req.params.id },
-      include: [{ model: ProductOutward, include: [{ model: Vehicle }] }]
+      include: [
+        {
+          model: Inventory,
+          as: "Inventories",
+          include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
+        },
+        {
+          model: ProductOutward,
+          include: [
+            {
+              model: Inventory,
+              as: "Inventories",
+              include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
+            },
+            {
+              model: Vehicle,
+              include: [{ model: Car, include: [CarMake, CarModel] }]
+            }
+          ]
+        }
+      ]
     });
     return res.json({
       success: true,
-      message: 'Product Outwards',
+      message: "Product Outwards inside Dispatch Orders",
       data: response.rows,
       count: response.count,
       pages: Math.ceil(response.count / limit)
