@@ -59,7 +59,7 @@ router.get("/", async (req, res, next) => {
       }
     ],
     order: [["createdAt", "DESC"]],
-    where,
+    where,offset, limit,
     distinct: true
   });
   res.json({

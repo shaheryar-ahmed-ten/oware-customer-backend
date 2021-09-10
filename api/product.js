@@ -29,8 +29,8 @@ router.get("/", async (req, res, next) => {
         group: ['productId','warehouseId']
     })
     const count = await Inventory.count({
-        distinct: true,
-        include: [{ model: Product }],
+        // distinct: true,
+        // include: [{ model: Product }],
         col: 'productId',
         where
     });
