@@ -7,6 +7,7 @@ const outwardRouter = require("./productOutward");
 const orderRouter = require("./order");
 const productRouter = require("./product");
 const rideRouter = require("./ride");
+const previewRouter = require("./preview");
 
 const { isLoggedIn, checkPermission } = require("../services/auth.service");
 const { PERMISSIONS } = require("../enums");
@@ -26,5 +27,5 @@ router.use("/outward", isLoggedIn, checkPermission(PERMISSIONS.CP_INWARD_FULL), 
 router.use("/order", isLoggedIn, checkPermission(PERMISSIONS.CP_ORDER_FULL), orderRouter);
 router.use("/product", isLoggedIn, checkPermission(PERMISSIONS.CP_PRODUCT_FULL), productRouter);
 router.use("/ride", isLoggedIn, checkPermission(PERMISSIONS.CP_DASHBOARD_FULL), rideRouter);
-
+router.use("/preview", previewRouter);
 module.exports = router;
