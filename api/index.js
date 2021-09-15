@@ -16,7 +16,7 @@ const { PERMISSIONS } = require("../enums");
 router.get("/", (req, res, next) => {
   res.json({
     success: true,
-    message: "Welcome!"
+    message: "Welcome!",
   });
 });
 
@@ -27,5 +27,5 @@ router.use("/outward", isLoggedIn, checkPermission(PERMISSIONS.CP_INWARD_FULL), 
 router.use("/order", isLoggedIn, checkPermission(PERMISSIONS.CP_ORDER_FULL), orderRouter);
 router.use("/product", isLoggedIn, checkPermission(PERMISSIONS.CP_PRODUCT_FULL), productRouter);
 router.use("/ride", isLoggedIn, checkPermission(PERMISSIONS.CP_DASHBOARD_FULL), rideRouter);
-router.use("/preview", previewRouter);
+router.use("/preview", checkPermission(PERMISSIONS.CP_DASHBOARD_FULL), previewRouter);
 module.exports = router;
