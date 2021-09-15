@@ -47,6 +47,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       validate: { notEmpty: { msg: 'Please enter company name' } }
     },
+    logoId: DataTypes.INTEGER,
     allowedApps: {
       type: DataTypes.ENUM({
         values: Object.keys(APPS)

@@ -1,7 +1,7 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
-const { User, Company, Role, VerificationCode } = require("../models");
+const { User, Company, Role, VerificationCode, File } = require("../models");
 const { sendForgotPasswordOTPEmail } = require("../services/mailer.service");
 const { generateOTP } = require("../services/common.services");
 const config = require("../config");
@@ -184,6 +184,49 @@ router.post("/auth/change-password/:id/:otp", async (req, res, next) => {
     success: true,
     message: "Your profile data updated successfully"
   });
+});
+
+
+// GET Company Data
+router.get('/company', authService.isLoggedIn, async (req, res, next) => {
+  // const limit = req.query.rowsPerPage || config.rowsPerPage;
+  // const offset = (req.query.page - 1 || 0) * limit;
+  // let where = {
+      // id: req.companyId,
+  //     // productId: req.params.id
+  // };
+  const  companyId  = await Company.findOne({ where: { id: req.companyId } });
+  const fileid = await File.findOne({where: {id: 40}});
+  // const response = await Company.findAndCountAll({
+  //     attributes: [
+  //         'logoId'
+  //     ],
+  //     include: [{
+  //         model: File, attributes: ['id'],
+  //         where: { customerId: companyId },
+  //     }],
+  //     // order: [['createdAt', 'DESC']],
+  //     where
+  //     // , limit, offset,
+  // });
+  // res.json({
+  //     success: true,
+  //     message: 'respond with a resource',
+  //     data: response.rows,
+  //     pages: Math.ceil(response.count / limit)
+  // });
+  // const response= 'Checked';
+  return res.json({
+        success: true,
+        message: 'respond with a resource',
+        data: companyId,
+        file: fileid
+        // pages: Math.ceil(response.count / limit)
+    });
+  // return res.json({
+  //   success: true,
+  //   data: req.user
+  // });
 });
 
 module.exports = router;
