@@ -196,7 +196,7 @@ router.get('/company', authService.isLoggedIn, async (req, res, next) => {
   //     // productId: req.params.id
   // };
   const  companyId  = await Company.findOne({ where: { id: req.companyId } });
-  const fileid = await File.findOne({where: {id: 40}});
+  const fileid = await File.findOne({where: {id: companyId.logoId}});
   // const response = await Company.findAndCountAll({
   //     attributes: [
   //         'logoId'
