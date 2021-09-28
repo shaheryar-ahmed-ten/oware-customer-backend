@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const moment = require("moment");
+const moment = require("moment-timezone");
 const {
   Warehouse,
   Product,
@@ -103,6 +103,7 @@ router.get("/", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   let message = "New dispatchOrder registered";
   let dispatchOrder;
+  req.body["shipmentDate"] = new Date(moment(req.body["shipmentDate"]).tz("Africa/Abidjan"));
   req.body.inventories = req.body.inventories || [{ id: req.body.inventoryId, quantity: req.body.quantity }];
   req.body.customerId = req.userId;
   try {
