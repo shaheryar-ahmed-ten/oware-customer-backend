@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const moment = require("moment");
+const moment = require("moment-timezone");
 const {
   Warehouse,
   Product,
@@ -16,7 +16,7 @@ const {
   Company,
   sequelize,
   OrderGroup,
-  User
+  User,
 } = require("../models");
 const config = require("../config");
 const { Op, Sequelize, fn, col } = require("sequelize");
@@ -32,8 +32,8 @@ router.get("/", async (req, res, next) => {
       // userId: req.userId
     };
     if (req.query.search)
-      where[Op.or] = ["$Inventory.Warehouse.name$", "internalIdForBusiness", "referenceId"].map(key => ({
-        [key]: { [Op.like]: "%" + req.query.search + "%" }
+      where[Op.or] = ["$Inventory.Warehouse.name$", "internalIdForBusiness", "referenceId"].map((key) => ({
+        [key]: { [Op.like]: "%" + req.query.search + "%" },
       }));
     if (req.query.days) {
       const currentDate = moment();
@@ -41,12 +41,12 @@ router.get("/", async (req, res, next) => {
       where["createdAt"] = { [Op.between]: [previousDate, currentDate] };
     }
     if (req.query.status)
-      where[Op.or] = ["status"].map(key => ({
-        [key]: { [Op.eq]: req.query.status }
+      where[Op.or] = ["status"].map((key) => ({
+        [key]: { [Op.eq]: req.query.status },
       }));
     if (req.query.warehouse)
-      where[Op.or] = ["$Inventory.Warehouse.id$"].map(key => ({
-        [key]: { [Op.eq]: req.query.warehouse }
+      where[Op.or] = ["$Inventory.Warehouse.id$"].map((key) => ({
+        [key]: { [Op.eq]: req.query.warehouse },
       }));
     const { companyId } = await User.findOne({ where: { id: req.userId } });
     const response = await DispatchOrder.findAndCountAll({
@@ -57,32 +57,32 @@ router.get("/", async (req, res, next) => {
           include: [
             { model: Product, include: [{ model: UOM }] },
             { model: Company, required: true },
-            { model: Warehouse, required: true }
+            { model: Warehouse, required: true },
           ],
           where: { customerId: companyId },
-          required: true
+          required: true,
         },
         {
           model: Inventory,
           as: "Inventories",
           include: [{ model: Product, include: [{ model: UOM }] }, Company, Warehouse],
           where: { customerId: companyId },
-          required: true
-        }
+          required: true,
+        },
       ],
-      order: [["updatedAt", "DESC"]],
+      order: [["createdAt", "DESC"]],
       // subQuery: false,
       where,
       limit,
       offset,
-      distinct: true
+      distinct: true,
     });
     for (const { dataValues } of response.rows) {
       dataValues["ProductOutwards"] = await ProductOutward.findAll({
         include: ["OutwardGroups", "Vehicle"],
         attributes: ["quantity", "referenceId", "internalIdForBusiness"],
         required: false,
-        where: { dispatchOrderId: dataValues.id }
+        where: { dispatchOrderId: dataValues.id },
       });
     }
 
@@ -91,7 +91,7 @@ router.get("/", async (req, res, next) => {
       message: "respond with a resource",
       data: response.rows,
       count: response.count,
-      pages: Math.ceil(response.count / limit)
+      pages: Math.ceil(response.count / limit),
     });
   } catch (error) {
     console.log("err", error);
@@ -103,14 +103,15 @@ router.get("/", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   let message = "New dispatchOrder registered";
   let dispatchOrder;
+  req.body["shipmentDate"] = new Date(moment(req.body["shipmentDate"]).tz("Africa/Abidjan"));
   req.body.inventories = req.body.inventories || [{ id: req.body.inventoryId, quantity: req.body.quantity }];
   req.body.customerId = req.userId;
   try {
-    await sequelize.transaction(async transaction => {
+    await sequelize.transaction(async (transaction) => {
       dispatchOrder = await DispatchOrder.create(
         {
           userId: req.userId,
-          ...req.body
+          ...req.body,
         },
         { transaction }
       );
@@ -118,7 +119,7 @@ router.post("/", async (req, res, next) => {
       dispatchOrder.internalIdForBusiness = req.body.internalIdForBusiness + numberOfInternalIdForBusiness;
       let sumOfComitted = [];
       let comittedAcc;
-      req.body.inventories.forEach(Inventory => {
+      req.body.inventories.forEach((Inventory) => {
         let quantity = parseInt(Inventory.quantity);
         sumOfComitted.push(quantity);
       });
@@ -128,28 +129,28 @@ router.post("/", async (req, res, next) => {
       dispatchOrder.quantity = comittedAcc;
       await dispatchOrder.save({ transaction });
       let inventoryIds = [];
-      inventoryIds = req.body.inventories.map(inventory => {
+      inventoryIds = req.body.inventories.map((inventory) => {
         return inventory.id;
       });
-      const toFindDuplicates = arry => arry.filter((item, index) => arry.indexOf(item) != index);
+      const toFindDuplicates = (arry) => arry.filter((item, index) => arry.indexOf(item) != index);
       const duplicateElements = toFindDuplicates(inventoryIds);
       if (duplicateElements.length != 0) {
         throw new Error("Can not add same inventory twice");
       }
 
       await OrderGroup.bulkCreate(
-        req.body.inventories.map(inventory => ({
+        req.body.inventories.map((inventory) => ({
           userId: req.userId,
           orderId: dispatchOrder.id,
           inventoryId: inventory.id,
-          quantity: inventory.quantity
+          quantity: inventory.quantity,
         })),
         { transaction }
       );
 
       return Promise.all(
-        req.body.inventories.map(_inventory => {
-          return Inventory.findByPk(_inventory.id, { transaction }).then(inventory => {
+        req.body.inventories.map((_inventory) => {
+          return Inventory.findByPk(_inventory.id, { transaction }).then((inventory) => {
             if (!inventory && !_inventory.id) throw new Error("Inventory is not available");
             if (_inventory.quantity > inventory.availableQuantity)
               throw new Error("Cannot create orders above available quantity");
@@ -167,13 +168,13 @@ router.post("/", async (req, res, next) => {
     res.json({
       success: true,
       message,
-      data: dispatchOrder
+      data: dispatchOrder,
     });
   } catch (err) {
     console.log("err", err);
     res.json({
       success: false,
-      message: err.toString().replace("Error: ", "")
+      message: err.toString().replace("Error: ", ""),
     });
   }
 });
@@ -190,22 +191,22 @@ router.get("/relations", async (req, res, next) => {
       where do.userId = ${req.userId}
       group by w.name,w.id`
       )
-      .then(item => item[0]),
+      .then((item) => item[0]),
     products: await OutboundStat.findAll({
       group: ["productId"],
       plain: false,
       where: whereClauseWithoutDate,
       attributes: [
         ["productId", "id"],
-        [Sequelize.col("product"), "name"]
-      ]
-    })
+        [Sequelize.col("product"), "name"],
+      ],
+    }),
   };
 
   res.json({
     success: true,
     message: "respond with a resource",
-    relations
+    relations,
   });
 });
 
@@ -215,18 +216,18 @@ router.get("/inventory", async (req, res, next) => {
       where: {
         customerId: req.query.customerId,
         warehouseId: req.query.warehouseId,
-        productId: req.query.productId
-      }
+        productId: req.query.productId,
+      },
     });
     res.json({
       success: true,
       message: "respond with a resource",
-      inventory
+      inventory,
     });
   } else
     res.json({
       success: false,
-      message: "No inventory found"
+      message: "No inventory found",
     });
 });
 
@@ -234,25 +235,25 @@ router.get("/warehouses", async (req, res, next) => {
   if (req.query.customerId) {
     const inventories = await Inventory.findAll({
       where: {
-        customerId: req.query.customerId
+        customerId: req.query.customerId,
       },
       attributes: ["warehouseId", fn("COUNT", col("warehouseId"))],
       include: [
         {
-          model: Warehouse
-        }
+          model: Warehouse,
+        },
       ],
-      group: "warehouseId"
+      group: "warehouseId",
     });
     res.json({
       success: true,
       message: "respond with a resource",
-      warehouses: inventories.map(inventory => inventory.Warehouse)
+      warehouses: inventories.map((inventory) => inventory.Warehouse),
     });
   } else
     res.json({
       success: false,
-      message: "No inventory found"
+      message: "No inventory found",
     });
 });
 
@@ -263,28 +264,28 @@ router.get("/products", async (req, res, next) => {
         customerId: req.query.customerId,
         warehouseId: req.query.warehouseId,
         availableQuantity: {
-          [Op.ne]: 0
-        }
+          [Op.ne]: 0,
+        },
       },
       attributes: ["productId", fn("COUNT", col("productId"))],
       include: [
         {
           model: Product,
-          include: [{ model: UOM }]
-        }
+          include: [{ model: UOM }],
+        },
       ],
-      group: "productId"
+      group: "productId",
     });
     res.json({
       success: true,
       message: "respond with a resource",
-      products: inventories.map(inventory => inventory.Product)
+      products: inventories.map((inventory) => inventory.Product),
     });
   } else
     res.json({
       products: [],
       success: false,
-      message: "No inventory found"
+      message: "No inventory found",
     });
 });
 
@@ -299,7 +300,7 @@ router.get("/:id", async (req, res, next) => {
         {
           model: Inventory,
           as: "Inventories",
-          include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
+          include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }],
         },
         {
           model: ProductOutward,
@@ -307,27 +308,27 @@ router.get("/:id", async (req, res, next) => {
             {
               model: Inventory,
               as: "Inventories",
-              include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
+              include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }],
             },
             {
               model: Vehicle,
-              include: [{ model: Car, include: [CarMake, CarModel] }]
-            }
-          ]
-        }
-      ]
+              include: [{ model: Car, include: [CarMake, CarModel] }],
+            },
+          ],
+        },
+      ],
     });
     return res.json({
       success: true,
       message: "Product Outwards inside Dispatch Orders",
       data: response.rows,
       count: response.count,
-      pages: Math.ceil(response.count / limit)
+      pages: Math.ceil(response.count / limit),
     });
   } catch (err) {
     return res.json({
       success: false,
-      message: err.message
+      message: err.message,
     });
   }
 });
