@@ -12,25 +12,25 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       Ride.belongsTo(models.User, {
-        foreignKey: "userId"
+        foreignKey: "userId",
       });
       Ride.belongsTo(models.Vehicle, {
-        foreignKey: "vehicleId"
+        foreignKey: "vehicleId",
       });
       Ride.belongsTo(models.Driver, {
-        foreignKey: "driverId"
+        foreignKey: "driverId",
       });
-      Ride.belongsTo(models.Area, {
-        foreignKey: "pickupAreaId",
-        as: "PickupArea"
+      Ride.belongsTo(models.City, {
+        foreignKey: "pickupCityId",
+        as: "pickupCity",
       });
-      Ride.belongsTo(models.Area, {
-        foreignKey: "dropoffAreaId",
-        as: "DropoffArea"
+      Ride.belongsTo(models.City, {
+        foreignKey: "dropoffCityId",
+        as: "dropoffCity",
       });
       Ride.hasMany(models.RideProduct, {
         foreignKey: "rideId",
-        sourceKey: "id"
+        sourceKey: "id",
       });
     }
   }
@@ -39,19 +39,19 @@ module.exports = (sequelize, DataTypes) => {
       userId: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        validate: { notEmpty: true }
+        validate: { notEmpty: true },
       },
       customerId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
       },
       vehicleId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
       },
       driverId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
       },
       // manifestId: {
       //   type: DataTypes.INTEGER,
@@ -61,54 +61,54 @@ module.exports = (sequelize, DataTypes) => {
       pickupDate: {
         type: DataTypes.DATE,
         allowNull: false,
-        validate: { notEmpty: { msg: "Please select pickup date" } }
+        validate: { notEmpty: { msg: "Please select pickup date" } },
       },
       dropoffDate: {
         type: DataTypes.DATE,
         allowNull: true,
-        validate: { notEmpty: { msg: "Please select dropoff date" } }
+        validate: { notEmpty: { msg: "Please select dropoff date" } },
       },
       pickupAddress: DataTypes.STRING,
-      pickupAreaId: {
+      pickupCityId: {
         type: DataTypes.INTEGER,
-        allowNull: false
+        allowNull: false,
+      },
+      dropoffCityId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
       },
       dropoffAddress: DataTypes.STRING,
-      dropoffAreaId: {
-        type: DataTypes.INTEGER,
-        allowNull: false
-      },
       cancellationReason: DataTypes.STRING,
       cancellationComment: DataTypes.STRING,
       status: {
         type: DataTypes.ENUM({
-          values: Object.keys(RIDE_STATUS)
+          values: Object.keys(RIDE_STATUS),
         }),
         allowNull: false,
-        defaultValue: RIDE_STATUS.UNASSIGNED
+        defaultValue: RIDE_STATUS.UNASSIGNED,
       },
       price: {
         type: DataTypes.INTEGER,
-        allowNull: true
+        allowNull: true,
       },
       cost: {
         type: DataTypes.INTEGER,
-        allowNull: true
+        allowNull: true,
       },
       customerDiscount: {
         type: DataTypes.INTEGER,
-        allowNull: true
+        allowNull: true,
       },
       driverIncentive: {
         type: DataTypes.INTEGER,
-        allowNull: true
-      }
+        allowNull: true,
+      },
     },
     {
       sequelize,
       paranoid: true,
       modelName: "Ride",
-      timestamps: true
+      timestamps: true,
     }
   );
   return Ride;
