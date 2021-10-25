@@ -1,7 +1,21 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
-const { User, Company, Role, VerificationCode, Ride, RideProduct, Area, Zone, City, Vehicle, Car, Category, Driver } = require("../models");
+const {
+  User,
+  Company,
+  Role,
+  VerificationCode,
+  Ride,
+  RideProduct,
+  Area,
+  Zone,
+  City,
+  Vehicle,
+  Car,
+  Category,
+  Driver,
+} = require("../models");
 const { sendForgotPasswordOTPEmail } = require("../services/mailer.service");
 const { generateOTP } = require("../services/common.services");
 const config = require("../config");
@@ -16,8 +30,8 @@ router.get("/", async (req, res, next) => {
   let where = { customerId: req.user.companyId };
   if (req.query.search)
     where[Op.or] = [
-      "$PickupArea.name$",
-      "$DropoffArea.name$",
+      "$PickupCity.name$",
+      "$DropoffCity.name$",
       "pickupAddress",
       "dropoffAddress",
       "$Vehicle.Car.CarModel.name$",
@@ -25,34 +39,34 @@ router.get("/", async (req, res, next) => {
       "id",
       "$Customer.name$",
       "$Driver.Vendor.name$",
-      "$Driver.name$"
-    ].map(key => ({ [key]: { [Op.like]: "%" + req.query.search + "%" } }));
+      "$Driver.name$",
+    ].map((key) => ({ [key]: { [Op.like]: "%" + req.query.search + "%" } }));
   if (req.query.status) where["status"] = req.query.status;
   const response = await Ride.findAndCountAll({
     include: [
       {
         model: Vehicle,
-        include: [Driver, { model: Company, as: "Vendor" }]
+        include: [Driver, { model: Company, as: "Vendor" }],
       },
       {
         model: RideProduct,
-        include: [Category]
+        include: [Category],
       },
       {
-        model: Area,
-        as: "PickupArea"
+        model: City,
+        as: "pickupCity",
       },
       {
-        model: Area,
-        as: "DropoffArea"
-      }
+        model: City,
+        as: "dropoffCity",
+      },
     ],
     distinct: true,
     subQuery: false,
     order: [["createdAt", "DESC"]],
     where,
     limit,
-    offset
+    offset,
   });
   res.json({
     success: true,
@@ -60,7 +74,7 @@ router.get("/", async (req, res, next) => {
     data: response.rows,
     pages: Math.ceil(response.count / limit),
     count: response.count,
-    currentPage: Math.ceil(response.rows.length / limit)
+    currentPage: Math.ceil(response.rows.length / limit),
   });
 });
 
@@ -72,27 +86,27 @@ router.get("/:id", async (req, res, next) => {
     include: [
       {
         model: Vehicle,
-        include: [Driver, { model: Company, as: "Vendor" }]
+        include: [Driver, { model: Company, as: "Vendor" }],
       },
       {
         model: RideProduct,
-        include: [Category]
+        include: [Category],
       },
       {
-        model: Area,
-        as: "PickupArea"
+        model: City,
+        as: "pickupCity",
       },
       {
-        model: Area,
-        as: "DropoffArea"
-      }
-    ]
+        model: City,
+        as: "dropoffCity",
+      },
+    ],
   });
 
   res.json({
     success: true,
     message: "respond with a resource",
-    data: response
+    data: response,
   });
 });
 
