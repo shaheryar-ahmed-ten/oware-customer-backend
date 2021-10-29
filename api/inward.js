@@ -34,7 +34,7 @@ router.get("/", async (req, res, next) => {
     where["createdAt"] = { [Op.between]: [previousDate, currentDate] };
   }
   if (req.query.search)
-    where[Op.or] = ["$Products.name$", "$ProductInward.referenceId$", "$Warehouse.name$"].map(key => ({
+    where[Op.or] = ["internalIdForBusiness", "$Warehouse.name$","referenceId"].map(key => ({
       [key]: { [Op.like]: "%" + req.query.search + "%" }
     }));
   if ("warehouse" in req.query) {
@@ -52,10 +52,12 @@ router.get("/", async (req, res, next) => {
       {
         model: Product,
         as: "Products",
-        include: [{ model: UOM }]
+        include: [{ model: UOM }],
+        required:true
       },
       {
-        model: Warehouse
+        model: Warehouse,
+        required:true
       }
     ],
     order: [["createdAt", "DESC"]],
