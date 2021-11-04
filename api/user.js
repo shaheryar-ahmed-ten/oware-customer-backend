@@ -50,6 +50,13 @@ router.post("/auth/login", async (req, res, next) => {
       success: false,
       message: "User doesn't exist with this email!",
     });
+    
+  if (user.Company.isActive == false)
+  return res.status(401).json({
+    success: false,
+    message: "Company is in-Active!",
+  });
+  
   if (user.isActive == 0)
     return res.status(401).json({
       success: false,

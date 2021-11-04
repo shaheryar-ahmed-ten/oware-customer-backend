@@ -27,6 +27,9 @@ module.exports = (sequelize, DataTypes) => {
         through: models.InwardGroup,
         foreignKey: "productId"
       });
+      Product.hasMany(models.Inventory, {
+        foreignKey: "productId",
+      });
     }
   }
   Product.init(
