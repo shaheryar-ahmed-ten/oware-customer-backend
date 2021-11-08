@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const moment = require('moment')
-const { Inventory, ProductInward, OutboundStat, InboundStat, InwardGroup, Product, sequelize, Sequelize } = require('../models')
+const { Inventory, ProductInward, OutboundStat, InboundStat,Ride, InwardGroup, Product, sequelize, Sequelize } = require('../models')
 const { Op, where } = require('sequelize');
 moment.prototype.toMySqlDateTime = function () {
   return this.format('YYYY-MM-DD HH:mm:ss');
@@ -16,6 +16,9 @@ router.get('/', async (req, res) => {
     customerId: req.companyId, availableQuantity: {
       [Op.ne]: 0
     }
+  };
+  const whereClauseWithoutDateRide = {
+    customerId: req.companyId, status:"UNASSIGNED"
   };
 
   const inboundStats = {
@@ -55,6 +58,10 @@ router.get('/', async (req, res) => {
     warehouses: await Inventory.aggregate('warehouseId', 'count', {
       distinct: true,
       where: whereClauseWithoutDate
+    }),
+    rides: await Ride.aggregate('id', 'count', {
+      distinct: true,
+      where: whereClauseWithoutDateRide
     }),
     ...(await sequelize.query(`
       select count(*) as pendingOrders from
