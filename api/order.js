@@ -166,7 +166,6 @@ router.get("/export", async (req, res, next) => {
     for (const inv of order.Inventories) {
       if (order.dataValues.ProductOutwards && order.dataValues.ProductOutwards.length > 0) {
         for (const outInv of order.dataValues.ProductOutwards) {
-
           orderArray.push([
             order.internalIdForBusiness || "",
             inv.Product.name,
@@ -175,8 +174,7 @@ router.get("/export", async (req, res, next) => {
             order.receiverName,
             order.receiverPhone,
             inv.OrderGroup.quantity,
-            outInv.OutwardGroups.find((oGroup) => oGroup.inventoryId === inv.OrderGroup.inventoryId).quantity,
-            // outInv.OutwardGroups.find((oGroup) => oGroup.inventoryId === inv.OrderGroups).quantity, // incase of partial/fullfilled i.e 0 < outwards
+            outInv.OutwardGroups.find((oGroup) => oGroup.inventoryId === inv.OrderGroup.inventoryId).quantity, // incase of partial/fullfilled i.e 0 < outwards
             order.referenceId || "",
             `${order.User.firstName || ""} ${order.User.lastName || ""}`,
             moment(order.createdAt).tz(req.query.client_Tz).format("DD/MM/yy HH:mm"),
