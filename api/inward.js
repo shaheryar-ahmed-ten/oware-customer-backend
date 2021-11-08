@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const moment = require("moment");
+const moment = require("moment-timezone");
 const {
   ProductInward,
   Warehouse,
@@ -20,6 +20,7 @@ const config = require("../config");
 const { Op, Sequelize } = require("sequelize");
 const authService = require("../services/auth.service");
 const { digitize } = require("../services/common.services");
+const ExcelJS = require("exceljs");
 
 /* GET productInwards listing. */
 router.get("/", async (req, res, next) => {
@@ -34,7 +35,7 @@ router.get("/", async (req, res, next) => {
     where["createdAt"] = { [Op.between]: [previousDate, currentDate] };
   }
   if (req.query.search)
-    where[Op.or] = ["internalIdForBusiness", "$Warehouse.name$","referenceId"].map(key => ({
+    where[Op.or] = ["internalIdForBusiness", "$Warehouse.name$", "referenceId"].map(key => ({
       [key]: { [Op.like]: "%" + req.query.search + "%" }
     }));
   if ("warehouse" in req.query) {
@@ -53,15 +54,15 @@ router.get("/", async (req, res, next) => {
         model: Product,
         as: "Products",
         include: [{ model: UOM }],
-        required:true
+        required: true
       },
       {
         model: Warehouse,
-        required:true
+        required: true
       }
     ],
     order: [["createdAt", "DESC"]],
-    where,offset, limit,
+    where, offset, limit,
     distinct: true
   });
   res.json({
@@ -72,6 +73,73 @@ router.get("/", async (req, res, next) => {
     pages: Math.ceil(response.count / limit)
   });
 });
+
+router.get("/export", async (req, res, next) => {
+  let where = {
+    customerId: req.companyId
+  };
+
+  let workbook = new ExcelJS.Workbook();
+
+  worksheet = workbook.addWorksheet("Product Inwards");
+
+  const getColumnsConfig = (columns) =>
+    columns.map((column) => ({ header: column, width: Math.ceil(column.length * 1.5), outlineLevel: 1 }));
+
+  worksheet.columns = getColumnsConfig([
+    "INWARD ID",
+    "PRODUCT",
+    "WAREHOUSE",
+    "UOM",
+    "QUANTITY",
+    "REFERENCE ID",
+    "CREATOR",
+    "INWARD DATE",
+  ]);
+
+  const response = await ProductInward.findAndCountAll({
+    include: [
+      {
+        model: Product,
+        as: "Products",
+        include: [{ model: UOM }],
+        required: true
+      },
+      {
+        model: Warehouse,
+        required: true
+      },
+      {
+        model: User
+      }
+    ],
+    order: [["createdAt", "DESC"]],
+    where
+  });
+
+  const inwardArray = [];
+  for (const inward of response.rows) {
+    for (const Product of inward.Products) {
+      inwardArray.push([
+        inward.internalIdForBusiness || "",
+        Product.name,
+        inward.Warehouse.name,
+        Product.UOM.name,
+        Product.InwardGroup.quantity,
+        inward.referenceId || "",
+        `${inward.User.firstName || ""} ${inward.User.lastName || ""}`,
+        moment(inward.createdAt).tz(req.query.client_Tz).format("DD/MM/yy HH:mm"),
+      ]);
+    }
+  }
+
+  worksheet.addRows(inwardArray);
+
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", "attachment; filename=" + "Inventory.xlsx");
+
+  await workbook.xlsx.write(res).then(() => res.end());
+})
 
 router.get("/relations", async (req, res, next) => {
   let where = { isActive: true, "$ProductInwards.customerId$": req.companyId };
