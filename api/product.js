@@ -35,7 +35,7 @@ router.get("/", async (req, res, next) => {
         col: 'productId',
         where
     });
-    console.log(response.length)
+    
     res.json({
         success: true,
         message: 'respond with a resource',
