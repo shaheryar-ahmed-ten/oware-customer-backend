@@ -104,7 +104,6 @@ router.get("/export", async (req, res, next) => {
   let where = {}
   let workbook = new ExcelJS.Workbook();
 
-
   worksheet = workbook.addWorksheet("Orders");
 
   const getColumnsConfig = (columns) =>
