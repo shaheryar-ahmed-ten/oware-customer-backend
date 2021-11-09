@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const moment = require('moment')
-const { Inventory, ProductInward, OutboundStat, InboundStat,Ride, InwardGroup, Product, sequelize, Sequelize } = require('../models')
+const { Inventory, ProductInward, OutboundStat, InboundStat,Ride,Vehicle,Car,Driver,City,RideProduct ,Company,Category,InwardGroup, Product, sequelize, Sequelize } = require('../models')
 const { Op, where } = require('sequelize');
 moment.prototype.toMySqlDateTime = function () {
   return this.format('YYYY-MM-DD HH:mm:ss');
@@ -81,5 +81,81 @@ router.get('/', async (req, res) => {
     inboundStats, generalStats, outboundStats
   });
 });
+
+// 
+
+router.get("/ride", async (req, res, next) => {
+  const limit = 5;
+  const offset = (req.query.page - 1 || 0) * limit;
+  let where = { customerId: req.user.companyId };
+  const response = await Ride.findAndCountAll({
+    include: [
+      {
+        model: Vehicle,
+        include: [Driver, { model: Company, as: "Vendor" }],
+      },
+      {
+        model: RideProduct,
+        include: [Category],
+      },
+      {
+        model: City,
+        as: "pickupCity",
+      },
+      {
+        model: City,
+        as: "dropoffCity",
+      },
+    ],
+    distinct: true,
+    subQuery: false,
+    order: [["createdAt", "DESC"]],
+    where,
+    limit,
+    offset,
+  });
+  // console.log(response)
+  res.json({
+    success: true,
+    message: "respond with a resource",
+    data: response.rows,
+    // pages: Math.ceil(response.count / limit),
+    // count: response.count,
+    // currentPage: Math.ceil(response.rows.length / limit),
+  });
+});
+
+// router.get("/:id", async (req, res, next) => {
+//   let where = {};
+//   const response = await Ride.findOne({
+//     order: [["updatedAt", "DESC"]],
+//     where: { id: req.params.id, customerId: req.user.companyId },
+//     include: [
+//       {
+//         model: Vehicle,
+//         include: [Driver, { model: Company, as: "Vendor" }],
+//       },
+//       {
+//         model: RideProduct,
+//         include: [Category],
+//       },
+//       {
+//         model: City,
+//         as: "pickupCity",
+//       },
+//       {
+//         model: City,
+//         as: "dropoffCity",
+//       },
+//     ],
+//   });
+
+//   res.json({
+//     success: true,
+//     message: "respond with a resource",
+//     data: response,
+//   });
+// });
+// 
 
 module.exports = router;
