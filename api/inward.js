@@ -41,9 +41,9 @@ router.get("/", async (req, res, next) => {
   if ("warehouse" in req.query) {
     where["warehouseId"] = req.query.warehouse;
   }
-  if ("product" in req.query) {
-    where["$Products.id$"] = req.query.product;
-  }
+  // if ("product" in req.query) {
+  //   where["$Products.id$"] = req.query.product;
+  // }
   if ("referenceId" in req.query) {
     where["referenceId"] = req.query.referenceId;
   }
