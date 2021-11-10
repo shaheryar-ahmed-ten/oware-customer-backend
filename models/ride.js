@@ -130,14 +130,14 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      eirId: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      },
-      builtyId: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      },
+      // eirId: {
+      //   type: DataTypes.INTEGER,
+      //   allowNull: true,
+      // },
+      // builtyId: {
+      //   type: DataTypes.INTEGER,
+      //   allowNull: true,
+      // },
     },
     {
       sequelize,
