@@ -102,6 +102,41 @@ module.exports = (sequelize, DataTypes) => {
       driverIncentive: {
         type: DataTypes.INTEGER,
         allowNull: true,
+      },memo:{
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      weightCargo: {
+        type: DataTypes.FLOAT,
+        allowNull: true,
+      },
+      pocName: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      pocNumber: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      eta: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      completionTime: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      currentLocation: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      eirId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      builtyId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
       },
     },
     {
