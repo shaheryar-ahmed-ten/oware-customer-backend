@@ -79,6 +79,10 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: STATUS.PENDING,
         validate: { notEmpty: { msg: "status cannot be empty" } }
+      },
+      orderMemo:{
+        type: DataTypes.TEXT,
+        allowNull: true,
       }
     },
     {

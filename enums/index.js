@@ -32,7 +32,8 @@ module.exports = Object.freeze({
     STATUS: {
       PENDING: 0,
       PARTIALLY_FULFILLED: 1,
-      FULFILLED: 2
+      FULFILLED: 2,
+      CANCELLED: 3
     }
   }
 });
