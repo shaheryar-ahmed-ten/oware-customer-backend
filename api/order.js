@@ -122,6 +122,7 @@ router.get("/export", async (req, res, next) => {
     "CREATOR",
     "CREATED DATE",
     "STATUS",
+    "ORDER MEMO"
   ]);
 
   const { companyId } = await User.findOne({ where: { id: req.userId } });
@@ -186,6 +187,7 @@ router.get("/export", async (req, res, next) => {
                   : order.status == "3"
                     ? "CANCELLED"
                     : "",
+            order.orderMemo || "",
           ]);
         }
       }
@@ -211,6 +213,7 @@ router.get("/export", async (req, res, next) => {
                 : order.status == "3"
                   ? "CANCELLED"
                   : "",
+          order.orderMemo || "",
         ]);
       }
     }
