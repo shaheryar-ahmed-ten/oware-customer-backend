@@ -20,6 +20,9 @@ router.get('/', async (req, res) => {
   const whereClauseWithoutDateRide = {
     customerId: req.companyId, status:"UNASSIGNED"
   };
+  const whereClauseWithoutDateCompletedRide = {
+    customerId: req.companyId, status:"COMPLETED"
+  };
 
   const inboundStats = {
     total: await InboundStat.aggregate('id', 'count', {
@@ -62,6 +65,10 @@ router.get('/', async (req, res) => {
     rides: await Ride.aggregate('id', 'count', {
       distinct: true,
       where: whereClauseWithoutDateRide
+    }),
+    completedRides: await Ride.aggregate('id', 'count', {
+      distinct: true,
+      where: whereClauseWithoutDateCompletedRide
     }),
     ...(await sequelize.query(`
       select count(*) as pendingOrders from
