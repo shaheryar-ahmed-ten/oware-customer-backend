@@ -128,13 +128,13 @@ router.get("/export", async (req, res, next) => {
     "DROPOFF DATE",
     "CREATED DATE",
     "UPDATED DATE",
-    // "POC NAME",
-    // "POC NUMBER",
+    "POC NAME",
+    "POC NUMBER",
     // "ETA(MINUTES)",
     // "TRIP COMPLETION TIME(MINUTES)",
     // "CURRENT LOCATION",
-    // "WEIGHT OF CARGO(KG)",
-    // "MEMO",
+    "WEIGHT OF CARGO(KG)",
+    "MEMO",
   ]);
 
   const response = await Ride.findAndCountAll({
@@ -186,13 +186,13 @@ router.get("/export", async (req, res, next) => {
       moment(row.dropoffDate).tz(req.query.client_Tz).format("DD/MM/yy h:mm A"),
       moment(row.createdAt).tz(req.query.client_Tz).format("DD/MM/yy h:mm A"),
       moment(row.updatedAt).tz(req.query.client_Tz).format("DD/MM/yy h:mm A"),
-      // row.pocName,
-      // row.pocNumber,
+      row.pocName,
+      row.pocNumber,
       // row.eta !== null && row.eta !== 0 ? row.eta / 60 : 0,
       // row.completionTime !== null && row.completionTime !== 0 ? row.completionTime / 60 : 0,
       // row.currentLocation,
-      // row.weightCargo,
-      // row.memo,
+      row.weightCargo,
+      row.memo,
     ])
   );
 
