@@ -14,7 +14,7 @@ const {
   Company,
   DispatchOrder,
   ProductOutward,
-  Vehicle
+  Vehicle,
 } = require("../models");
 const config = require("../config");
 const { Op, Sequelize } = require("sequelize");
@@ -27,7 +27,7 @@ router.get("/", async (req, res, next) => {
   const limit = req.query.rowsPerPage || config.rowsPerPage;
   const offset = (req.query.page - 1 || 0) * limit;
   let where = {
-    customerId: req.companyId
+    customerId: req.companyId,
   };
   if (req.query.days) {
     const currentDate = moment();
@@ -35,8 +35,8 @@ router.get("/", async (req, res, next) => {
     where["createdAt"] = { [Op.between]: [previousDate, currentDate] };
   }
   if (req.query.search)
-    where[Op.or] = ["internalIdForBusiness", "$Warehouse.name$", "referenceId"].map(key => ({
-      [key]: { [Op.like]: "%" + req.query.search + "%" }
+    where[Op.or] = ["internalIdForBusiness", "$Warehouse.name$", "referenceId"].map((key) => ({
+      [key]: { [Op.like]: "%" + req.query.search + "%" },
     }));
   if ("warehouse" in req.query) {
     where["warehouseId"] = req.query.warehouse;
@@ -54,29 +54,31 @@ router.get("/", async (req, res, next) => {
         model: Product,
         as: "Products",
         include: [{ model: UOM }],
-        required: true
+        required: true,
       },
       {
         model: Warehouse,
-        required: true
-      }
+        required: true,
+      },
     ],
     order: [["createdAt", "DESC"]],
-    where, offset, limit,
-    distinct: true
+    where,
+    offset,
+    limit,
+    distinct: true,
   });
   res.json({
     success: true,
     message: "respond with a resource",
     data: response.rows,
     count: response.count,
-    pages: Math.ceil(response.count / limit)
+    pages: Math.ceil(response.count / limit),
   });
 });
 
 router.get("/export", async (req, res, next) => {
   let where = {
-    customerId: req.companyId
+    customerId: req.companyId,
   };
 
   let workbook = new ExcelJS.Workbook();
@@ -103,18 +105,18 @@ router.get("/export", async (req, res, next) => {
         model: Product,
         as: "Products",
         include: [{ model: UOM }],
-        required: true
+        required: true,
       },
       {
         model: Warehouse,
-        required: true
+        required: true,
       },
       {
-        model: User
-      }
+        model: User,
+      },
     ],
     order: [["createdAt", "DESC"]],
-    where
+    where,
   });
 
   const inwardArray = [];
@@ -139,7 +141,7 @@ router.get("/export", async (req, res, next) => {
   res.setHeader("Content-Disposition", "attachment; filename=" + "Inventory.xlsx");
 
   await workbook.xlsx.write(res).then(() => res.end());
-})
+});
 
 router.get("/relations", async (req, res, next) => {
   let where = { isActive: true, "$ProductInwards.customerId$": req.companyId };
@@ -147,8 +149,8 @@ router.get("/relations", async (req, res, next) => {
   const whereClauseWithoutDateAndQuantity = {
     customerId: req.companyId,
     availableQuantity: {
-      [Op.ne]: 0
-    }
+      [Op.ne]: 0,
+    },
   };
   const relations = {
     warehouses: await InboundStat.findAll({
@@ -158,45 +160,15 @@ router.get("/relations", async (req, res, next) => {
       attributes: [
         ["warehouseId", "id"],
         [Sequelize.col("warehouse"), "name"],
-        [Sequelize.col("warehouse"), "businessWarehouseCode"]
-      ]
-    }),
-    products: await Product.findAll({ where, include: [{ model: ProductInward }, { model: UOM }] }),
-    dispatchOrders: await DispatchOrder.findAll({
-      include: [
-        {
-          model: Inventory,
-          as: "Inventory",
-          include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
-        },
-        {
-          model: Inventory,
-          as: "Inventories",
-          include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
-        },
-        {
-          model: ProductOutward,
-          include: [
-            {
-              model: Vehicle
-            },
-            {
-              model: Inventory,
-              as: "Inventories",
-              include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }]
-            }
-          ]
-        }
+        [Sequelize.col("warehouse"), "businessWarehouseCode"],
       ],
-      order: [["updatedAt", "DESC"]]
     }),
-    vehicles: await Vehicle.findAll({ where: { isActive: true } })
   };
 
   res.json({
     success: true,
     message: "respond with a resource",
-    relations
+    relations,
   });
 });
 
@@ -209,11 +181,11 @@ router.post("/", async (req, res, next) => {
 
     const { companyId } = await User.findOne({ where: { id: req.userId } });
     req.body["customerId"] = companyId;
-    await sequelize.transaction(async transaction => {
+    await sequelize.transaction(async (transaction) => {
       productInward = await ProductInward.create(
         {
           userId: req.userId,
-          ...req.body
+          ...req.body,
         },
         { transaction }
       );
@@ -223,24 +195,24 @@ router.post("/", async (req, res, next) => {
       await productInward.save({ transaction });
 
       await InwardGroup.bulkCreate(
-        req.body.products.map(product => ({
+        req.body.products.map((product) => ({
           userId: req.userId,
           inwardId: productInward.id,
           productId: product.id,
-          quantity: product.quantity
+          quantity: product.quantity,
         })),
         { transaction }
       );
 
       return await Promise.all(
-        req.body.products.map(product =>
+        req.body.products.map((product) =>
           Inventory.findOne({
             where: {
               customerId: companyId,
               warehouseId: req.body.warehouseId,
-              productId: product.id
-            }
-          }).then(inventory => {
+              productId: product.id,
+            },
+          }).then((inventory) => {
             if (!inventory)
               return Inventory.create(
                 {
@@ -249,7 +221,7 @@ router.post("/", async (req, res, next) => {
                   productId: product.id,
                   availableQuantity: product.quantity,
                   referenceId: req.body.referenceId,
-                  totalInwardQuantity: product.quantity
+                  totalInwardQuantity: product.quantity,
                 },
                 { transaction }
               );
@@ -265,7 +237,7 @@ router.post("/", async (req, res, next) => {
     res.json({
       success: true,
       message,
-      data: productInward
+      data: productInward,
     });
   } catch (error) {
     console.log("error", error);
