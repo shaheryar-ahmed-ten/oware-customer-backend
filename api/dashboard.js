@@ -12,6 +12,11 @@ router.get('/', async (req, res) => {
   const previousDate = moment().subtract(7, 'days');
   const formattedPreviousDate = previousDate.format("YYYY-MM-DD HH:mm:ss");
   const whereClauseWithDate = dateKey => ({ customerId: req.companyId, [dateKey]: { [Op.between]: [previousDate, currentDate] } });
+  const whereClauseWithDateUnassigned = dateKey => ({ customerId: req.companyId, status:"UNASSIGNED", [dateKey]: { [Op.between]: [previousDate, currentDate] } });
+  const whereClauseWithDateInProgress = dateKey => ({ customerId: req.companyId, status:"INPROGRESS", [dateKey]: { [Op.between]: [previousDate, currentDate] } });
+  const whereClauseWithDateAssigned = dateKey => ({ customerId: req.companyId, status:"ASSIGNED", [dateKey]: { [Op.between]: [previousDate, currentDate] } });
+  const whereClauseWithDateCancelled = dateKey => ({ customerId: req.companyId, status:"CANCELLED", [dateKey]: { [Op.between]: [previousDate, currentDate] } });
+  const whereClauseWithDateCompleted = dateKey => ({ customerId: req.companyId, status:"COMPLETED", [dateKey]: { [Op.between]: [previousDate, currentDate] } });
   const whereClauseWithoutDate = {
     customerId: req.companyId, availableQuantity: {
       [Op.ne]: 0
@@ -52,6 +57,27 @@ router.get('/', async (req, res) => {
       where: whereClauseWithDate('createdAt')
     })
   }
+  const rideStats = {
+    total: await Ride.aggregate('id', 'count', {
+      distinct: true,
+      where: whereClauseWithDate('createdAt')
+    }),
+    unassigned: await Ride.aggregate('id', 'count', {
+      where: whereClauseWithDateUnassigned('createdAt')
+    }),
+    assigned: await Ride.aggregate('id', 'count', {
+      where: whereClauseWithDateAssigned('createdAt')
+    }),
+    inprogress: await Ride.aggregate('id', 'count', {
+      where: whereClauseWithDateInProgress('createdAt')
+    }),
+    completed: await Ride.aggregate('id', 'count', {
+      where: whereClauseWithDateCompleted('createdAt')
+    }),
+    cancelled: await Ride.aggregate('id', 'count', {
+      where: whereClauseWithDateCancelled('createdAt')
+    })
+  }
 
   const generalStats = {
     products: await Inventory.aggregate('productId', 'count', {
@@ -62,10 +88,10 @@ router.get('/', async (req, res) => {
       distinct: true,
       where: whereClauseWithoutDate
     }),
-    rides: await Ride.aggregate('id', 'count', {
-      distinct: true,
-      where: whereClauseWithoutDateRide
-    }),
+    // rides: await Ride.aggregate('id', 'count', {
+    //   distinct: true,
+    //   where: whereClauseWithoutDateRide
+    // }),
     completedRides: await Ride.aggregate('id', 'count', {
       distinct: true,
       where: whereClauseWithoutDateCompletedRide
@@ -85,52 +111,52 @@ router.get('/', async (req, res) => {
   res.json({
     success: true,
     message: 'respond with a resource',
-    inboundStats, generalStats, outboundStats
+    inboundStats, generalStats, outboundStats, rideStats
   });
 });
 
 // 
 
-router.get("/ride", async (req, res, next) => {
-  const limit = 5;
-  const offset = (req.query.page - 1 || 0) * limit;
-  let where = { customerId: req.user.companyId };
-  const response = await Ride.findAndCountAll({
-    include: [
-      {
-        model: Vehicle,
-        include: [Driver, { model: Company, as: "Vendor" }],
-      },
-      {
-        model: RideProduct,
-        include: [Category],
-      },
-      {
-        model: City,
-        as: "pickupCity",
-      },
-      {
-        model: City,
-        as: "dropoffCity",
-      },
-    ],
-    distinct: true,
-    subQuery: false,
-    order: [["createdAt", "DESC"]],
-    where,
-    limit,
-    offset,
-  });
-  // console.log(response)
-  res.json({
-    success: true,
-    message: "respond with a resource",
-    data: response.rows,
-    // pages: Math.ceil(response.count / limit),
-    // count: response.count,
-    // currentPage: Math.ceil(response.rows.length / limit),
-  });
-});
+// router.get("/ride", async (req, res, next) => {
+//   const limit = 5;
+//   const offset = (req.query.page - 1 || 0) * limit;
+//   let where = { customerId: req.user.companyId };
+//   const response = await Ride.findAndCountAll({
+//     include: [
+//       {
+//         model: Vehicle,
+//         include: [Driver, { model: Company, as: "Vendor" }],
+//       },
+//       {
+//         model: RideProduct,
+//         include: [Category],
+//       },
+//       {
+//         model: City,
+//         as: "pickupCity",
+//       },
+//       {
+//         model: City,
+//         as: "dropoffCity",
+//       },
+//     ],
+//     distinct: true,
+//     subQuery: false,
+//     order: [["createdAt", "DESC"]],
+//     where,
+//     limit,
+//     offset,
+//   });
+//   // console.log(response)
+//   res.json({
+//     success: true,
+//     message: "respond with a resource",
+//     data: response.rows,
+//     // pages: Math.ceil(response.count / limit),
+//     // count: response.count,
+//     // currentPage: Math.ceil(response.rows.length / limit),
+//   });
+// });
 
 // router.get("/:id", async (req, res, next) => {
 //   let where = {};
