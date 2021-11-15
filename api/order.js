@@ -122,6 +122,7 @@ router.get("/export", async (req, res, next) => {
     "CREATOR",
     "CREATED DATE",
     "STATUS",
+    "ORDER MEMO"
   ]);
 
   const { companyId } = await User.findOne({ where: { id: req.userId } });
@@ -173,7 +174,10 @@ router.get("/export", async (req, res, next) => {
             order.receiverName,
             order.receiverPhone,
             inv.OrderGroup.quantity,
-            outInv.OutwardGroups.find((oGroup) => oGroup.inventoryId === inv.OrderGroup.inventoryId).quantity, // incase of partial/fullfilled i.e 0 < outwards
+            outInv.OutwardGroups.find((oGroup) => oGroup.inventoryId === inv.OrderGroup.inventoryId) ?
+              outInv.OutwardGroups.find((oGroup) => oGroup.inventoryId === inv.OrderGroup.inventoryId).quantity
+              :
+              0, // incase of partial/fullfilled i.e 0 < outwards
             order.referenceId || "",
             `${order.User.firstName || ""} ${order.User.lastName || ""}`,
             moment(order.createdAt).tz(req.query.client_Tz).format("DD/MM/yy HH:mm"),
@@ -186,6 +190,7 @@ router.get("/export", async (req, res, next) => {
                   : order.status == "3"
                     ? "CANCELLED"
                     : "",
+            order.orderMemo || "",
           ]);
         }
       }
@@ -211,6 +216,7 @@ router.get("/export", async (req, res, next) => {
                 : order.status == "3"
                   ? "CANCELLED"
                   : "",
+          order.orderMemo || "",
         ]);
       }
     }
