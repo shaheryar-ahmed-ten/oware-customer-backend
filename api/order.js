@@ -41,6 +41,21 @@ router.get("/", async (req, res, next) => {
       const previousDate = moment().subtract(req.query.days, "days");
       where["createdAt"] = { [Op.between]: [previousDate, currentDate] };
     }
+    if (req.query.start && req.query.end) {
+      const startDate = moment(req.query.start).utcOffset("+05:00").set({
+        hour: 0,
+        minute: 0,
+        second: 0,
+        millisecond: 0,
+      });
+      const endDate = moment(req.query.end).utcOffset("+05:00").set({
+        hour: 23,
+        minute: 59,
+        second: 59,
+        millisecond: 1000,
+      });
+      where["createdAt"] = { [Op.between]: [startDate, endDate] };
+    }
     if (req.query.status)
       where[Op.or] = ["status"].map((key) => ({
         [key]: { [Op.eq]: req.query.status },
@@ -101,7 +116,7 @@ router.get("/", async (req, res, next) => {
 });
 
 router.get("/export", async (req, res, next) => {
-  let where = {}
+  let where = {};
   let workbook = new ExcelJS.Workbook();
 
   worksheet = workbook.addWorksheet("Orders");
@@ -122,7 +137,7 @@ router.get("/export", async (req, res, next) => {
     "CREATOR",
     "CREATED DATE",
     "STATUS",
-    "ORDER MEMO"
+    "ORDER MEMO",
   ]);
 
   const { companyId } = await User.findOne({ where: { id: req.userId } });
@@ -147,8 +162,8 @@ router.get("/export", async (req, res, next) => {
         required: true,
       },
       {
-        model: User
-      }
+        model: User,
+      },
     ],
     order: [["createdAt", "DESC"]],
     where,
@@ -174,27 +189,25 @@ router.get("/export", async (req, res, next) => {
             order.receiverName,
             order.receiverPhone,
             inv.OrderGroup.quantity,
-            outInv.OutwardGroups.find((oGroup) => oGroup.inventoryId === inv.OrderGroup.inventoryId) ?
-              outInv.OutwardGroups.find((oGroup) => oGroup.inventoryId === inv.OrderGroup.inventoryId).quantity
-              :
-              0, // incase of partial/fullfilled i.e 0 < outwards
+            outInv.OutwardGroups.find((oGroup) => oGroup.inventoryId === inv.OrderGroup.inventoryId)
+              ? outInv.OutwardGroups.find((oGroup) => oGroup.inventoryId === inv.OrderGroup.inventoryId).quantity
+              : 0, // incase of partial/fullfilled i.e 0 < outwards
             order.referenceId || "",
             `${order.User.firstName || ""} ${order.User.lastName || ""}`,
             moment(order.createdAt).tz(req.query.client_Tz).format("DD/MM/yy HH:mm"),
             order.status == "0"
               ? "PENDING"
               : order.status == "1"
-                ? "PARTIALLY FULFILLED"
-                : order.status == "2"
-                  ? "FULFILLED"
-                  : order.status == "3"
-                    ? "CANCELLED"
-                    : "",
+              ? "PARTIALLY FULFILLED"
+              : order.status == "2"
+              ? "FULFILLED"
+              : order.status == "3"
+              ? "CANCELLED"
+              : "",
             order.orderMemo || "",
           ]);
         }
-      }
-      else {
+      } else {
         orderArray.push([
           order.internalIdForBusiness || "",
           inv.Product.name,
@@ -210,12 +223,12 @@ router.get("/export", async (req, res, next) => {
           order.status == "0"
             ? "PENDING"
             : order.status == "1"
-              ? "PARTIALLY FULFILLED"
-              : order.status == "2"
-                ? "FULFILLED"
-                : order.status == "3"
-                  ? "CANCELLED"
-                  : "",
+            ? "PARTIALLY FULFILLED"
+            : order.status == "2"
+            ? "FULFILLED"
+            : order.status == "3"
+            ? "CANCELLED"
+            : "",
           order.orderMemo || "",
         ]);
       }
@@ -228,8 +241,7 @@ router.get("/export", async (req, res, next) => {
   res.setHeader("Content-Disposition", "attachment; filename=" + "Inventory.xlsx");
 
   await workbook.xlsx.write(res).then(() => res.end());
-
-})
+});
 
 /* POST create new dispatchOrder. */
 router.post("/", async (req, res, next) => {
