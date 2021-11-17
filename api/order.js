@@ -51,7 +51,6 @@ router.get("/", async (req, res, next) => {
       isFinite(new Date(req.query.start)) &&
       isFinite(new Date(req.query.end))
     ) {
-      console.log("--------------debug ----------------------------");
       const startDate = moment(req.query.start).utcOffset("+05:00").set({
         hour: 0,
         minute: 0,

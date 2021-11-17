@@ -34,7 +34,14 @@ router.get("/", async (req, res, next) => {
     const previousDate = moment().subtract(req.query.days, "days");
     where["createdAt"] = { [Op.between]: [previousDate, currentDate] };
   }
-  if (req.query.start && req.query.end) {
+  if (
+    req.query.start &&
+    req.query.end &&
+    new Date(req.query.start) instanceof Date &&
+    new Date(req.query.end) instanceof Date &&
+    isFinite(new Date(req.query.start)) &&
+    isFinite(new Date(req.query.end))
+  ) {
     const startDate = moment(req.query.start).utcOffset("+05:00").set({
       hour: 0,
       minute: 0,
