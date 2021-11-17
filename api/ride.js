@@ -25,6 +25,8 @@ const authService = require("../services/auth.service");
 const { APPS } = require("../enums");
 const moment = require("moment-timezone");
 const ExcelJS = require("exceljs");
+const { Op, Sequelize } = require("sequelize");
+
 
 /* GET rides listing. */
 router.get("/", async (req, res, next) => {
@@ -33,16 +35,16 @@ router.get("/", async (req, res, next) => {
   let where = { customerId: req.user.companyId };
   if (req.query.search)
     where[Op.or] = [
-      "$PickupCity.name$",
-      "$DropoffCity.name$",
+      "$pickupCity.name$",
+      "$dropoffCity.name$",
       "pickupAddress",
       "dropoffAddress",
-      "$Vehicle.Car.CarModel.name$",
-      "$Vehicle.registrationNumber$",
+      // "$Vehicle.Car.CarModel.name$",
+      // "$Vehicle.registrationNumber$",
       "id",
-      "$Customer.name$",
-      "$Driver.Vendor.name$",
-      "$Driver.name$",
+      // "$Customer.name$",
+      // "$Driver.Vendor.name$",
+      // "$Driver.name$",
     ].map((key) => ({ [key]: { [Op.like]: "%" + req.query.search + "%" } }));
   if (req.query.status) where["status"] = req.query.status;
   const response = await Ride.findAndCountAll({
@@ -61,14 +63,16 @@ router.get("/", async (req, res, next) => {
       {
         model: City,
         as: "pickupCity",
+        required:true
       },
       {
         model: City,
         as: "dropoffCity",
+        required:true
       },
     ],
     distinct: true,
-    subQuery: false,
+    // subQuery: false,
     order: [["createdAt", "DESC"]],
     where,
     limit,
@@ -126,8 +130,6 @@ router.get("/export", async (req, res, next) => {
     "DROPOFF CITY",
     "DROPOFF ADDRESS",
     "DROPOFF DATE",
-    "CREATED DATE",
-    "UPDATED DATE",
     "POC NAME",
     "POC NUMBER",
     // "ETA(MINUTES)",
@@ -184,8 +186,6 @@ router.get("/export", async (req, res, next) => {
       row.dropoffCity.name,
       row.dropoffAddress,
       moment(row.dropoffDate).tz(req.query.client_Tz).format("DD/MM/yy h:mm A"),
-      moment(row.createdAt).tz(req.query.client_Tz).format("DD/MM/yy h:mm A"),
-      moment(row.updatedAt).tz(req.query.client_Tz).format("DD/MM/yy h:mm A"),
       row.pocName,
       row.pocNumber,
       // row.eta !== null && row.eta !== 0 ? row.eta / 60 : 0,
@@ -195,6 +195,18 @@ router.get("/export", async (req, res, next) => {
       row.memo,
     ])
   );
+
+  // Ride Products Sheet
+
+  worksheet = workbook.addWorksheet("Product Details");
+
+  worksheet.columns = getColumnsConfig(["RIDE ID", "CATEGORY", "PRODUCT NAME", "QUANTITY"]);
+
+  response.rows.map((row) => {
+    worksheet.addRows(
+      row.RideProducts.map((product) => [row.id, product.Category.name, product.name, product.quantity])
+    );
+  });
 
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   res.setHeader("Content-Disposition", "attachment; filename=" + "Inventory.xlsx");
