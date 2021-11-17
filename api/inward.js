@@ -34,6 +34,28 @@ router.get("/", async (req, res, next) => {
     const previousDate = moment().subtract(req.query.days, "days");
     where["createdAt"] = { [Op.between]: [previousDate, currentDate] };
   }
+  if (
+    req.query.start &&
+    req.query.end &&
+    new Date(req.query.start) instanceof Date &&
+    new Date(req.query.end) instanceof Date &&
+    isFinite(new Date(req.query.start)) &&
+    isFinite(new Date(req.query.end))
+  ) {
+    const startDate = moment(req.query.start).utcOffset("+05:00").set({
+      hour: 0,
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+    });
+    const endDate = moment(req.query.end).utcOffset("+05:00").set({
+      hour: 23,
+      minute: 59,
+      second: 59,
+      millisecond: 1000,
+    });
+    where["createdAt"] = { [Op.between]: [startDate, endDate] };
+  }
   if (req.query.search)
     where[Op.or] = ["internalIdForBusiness", "$Warehouse.name$", "referenceId"].map((key) => ({
       [key]: { [Op.like]: "%" + req.query.search + "%" },

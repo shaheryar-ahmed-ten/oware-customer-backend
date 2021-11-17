@@ -27,7 +27,6 @@ const moment = require("moment-timezone");
 const ExcelJS = require("exceljs");
 const { Op, Sequelize } = require("sequelize");
 
-
 /* GET rides listing. */
 router.get("/", async (req, res, next) => {
   const limit = req.query.rowsPerPage || config.rowsPerPage;
@@ -46,15 +45,46 @@ router.get("/", async (req, res, next) => {
       // "$Driver.Vendor.name$",
       // "$Driver.name$",
     ].map((key) => ({ [key]: { [Op.like]: "%" + req.query.search + "%" } }));
-  if (req.query.status) where["status"] = req.query.status;
+  // if (req.query.status) where["status"] = req.query.status;
+  if (req.query.days) {
+    const currentDate = moment();
+    const previousDate = moment().subtract(req.query.days, "days");
+    where["createdAt"] = { [Op.between]: [previousDate, currentDate] };
+  }
+  if (
+    req.query.start &&
+    req.query.end &&
+    new Date(req.query.start) instanceof Date &&
+    new Date(req.query.end) instanceof Date &&
+    isFinite(new Date(req.query.start)) &&
+    isFinite(new Date(req.query.end))
+  ) {
+    const startDate = moment(req.query.start).utcOffset("+05:00").set({
+      hour: 0,
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+    });
+    const endDate = moment(req.query.end).utcOffset("+05:00").set({
+      hour: 23,
+      minute: 59,
+      second: 59,
+      millisecond: 1000,
+    });
+    where["createdAt"] = { [Op.between]: [startDate, endDate] };
+  }
   const response = await Ride.findAndCountAll({
     include: [
       {
         model: Vehicle,
-        include: [Driver, { model: Company, as: "Vendor" }, {
-          model: Car,
-          include: [{ model: CarMake }, { model: CarModel }]
-        }],
+        include: [
+          Driver,
+          { model: Company, as: "Vendor" },
+          {
+            model: Car,
+            include: [{ model: CarMake }, { model: CarModel }],
+          },
+        ],
       },
       {
         model: RideProduct,
@@ -63,12 +93,12 @@ router.get("/", async (req, res, next) => {
       {
         model: City,
         as: "pickupCity",
-        required:true
+        required: true,
       },
       {
         model: City,
         as: "dropoffCity",
-        required:true
+        required: true,
       },
     ],
     distinct: true,
@@ -143,13 +173,14 @@ router.get("/export", async (req, res, next) => {
     include: [
       {
         model: Vehicle,
-        include: [Driver, { model: Company, as: "Vendor" }, {
-          model: Car,
-          include: [
-            { model: CarMake },
-            { model: CarModel }
-          ]
-        }],
+        include: [
+          Driver,
+          { model: Company, as: "Vendor" },
+          {
+            model: Car,
+            include: [{ model: CarMake }, { model: CarModel }],
+          },
+        ],
       },
       {
         model: RideProduct,
@@ -212,9 +243,7 @@ router.get("/export", async (req, res, next) => {
   res.setHeader("Content-Disposition", "attachment; filename=" + "Inventory.xlsx");
 
   await workbook.xlsx.write(res).then(() => res.end());
-
-
-})
+});
 
 router.get("/:id", async (req, res, next) => {
   let where = {};
