@@ -196,6 +196,18 @@ router.get("/export", async (req, res, next) => {
     ])
   );
 
+  // Ride Products Sheet
+
+  worksheet = workbook.addWorksheet("Product Details");
+
+  worksheet.columns = getColumnsConfig(["RIDE ID", "CATEGORY", "PRODUCT NAME", "QUANTITY"]);
+
+  response.rows.map((row) => {
+    worksheet.addRows(
+      row.RideProducts.map((product) => [row.id, product.Category.name, product.name, product.quantity])
+    );
+  });
+
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   res.setHeader("Content-Disposition", "attachment; filename=" + "Inventory.xlsx");
 
