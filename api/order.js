@@ -20,9 +20,10 @@ const {
 } = require("../models");
 const config = require("../config");
 const { Op, Sequelize, fn, col } = require("sequelize");
-const { digitize } = require("../services/common.services");
+const { digitize, attachDateFilter } = require("../services/common.services");
 const { RELATION_TYPES } = require("../enums");
 const ExcelJS = require("exceljs");
+const { CloudWatchLogs } = require("aws-sdk");
 
 // /* GET dispatchOrders listing. */
 router.get("/", async (req, res, next) => {
@@ -32,37 +33,11 @@ router.get("/", async (req, res, next) => {
     let where = {
       // userId: req.userId
     };
+    where = attachDateFilter(req.query, where, "createdAt");
     if (req.query.search)
       where[Op.or] = ["$Inventory.Warehouse.name$", "internalIdForBusiness", "referenceId"].map((key) => ({
         [key]: { [Op.like]: "%" + req.query.search + "%" },
       }));
-    if (req.query.days) {
-      const currentDate = moment();
-      const previousDate = moment().subtract(req.query.days, "days");
-      where["createdAt"] = { [Op.between]: [previousDate, currentDate] };
-    }
-    if (
-      req.query.start &&
-      req.query.end &&
-      new Date(req.query.start) instanceof Date &&
-      new Date(req.query.end) instanceof Date &&
-      isFinite(new Date(req.query.start)) &&
-      isFinite(new Date(req.query.end))
-    ) {
-      const startDate = moment(req.query.start).utcOffset("+05:00").set({
-        hour: 0,
-        minute: 0,
-        second: 0,
-        millisecond: 0,
-      });
-      const endDate = moment(req.query.end).utcOffset("+05:00").set({
-        hour: 23,
-        minute: 59,
-        second: 59,
-        millisecond: 1000,
-      });
-      where["createdAt"] = { [Op.between]: [startDate, endDate] };
-    }
     if (req.query.status)
       where[Op.or] = ["status"].map((key) => ({
         [key]: { [Op.eq]: req.query.status },
@@ -94,12 +69,10 @@ router.get("/", async (req, res, next) => {
         },
       ],
       order: [["createdAt", "DESC"]],
-      // subQuery: false,
       where,
       limit,
       offset,
       distinct: true,
-      logging: true,
     });
     for (const { dataValues } of response.rows) {
       dataValues["ProductOutwards"] = await ProductOutward.findAll({
