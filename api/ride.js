@@ -19,7 +19,7 @@ const {
   Driver,
 } = require("../models");
 const { sendForgotPasswordOTPEmail } = require("../services/mailer.service");
-const { generateOTP } = require("../services/common.services");
+const { generateOTP, attachDateFilter } = require("../services/common.services");
 const config = require("../config");
 const authService = require("../services/auth.service");
 const { APPS } = require("../enums");
@@ -31,7 +31,9 @@ const { Op, Sequelize } = require("sequelize");
 router.get("/", async (req, res, next) => {
   const limit = req.query.rowsPerPage || config.rowsPerPage;
   const offset = (req.query.page - 1 || 0) * limit;
-  let where = { customerId: req.user.companyId };
+  let where = {};
+  where = { customerId: req.user.companyId };
+  where = attachDateFilter(req.query, where, "createdAt");
   if (req.query.search)
     where[Op.or] = [
       "$pickupCity.name$",
@@ -46,33 +48,7 @@ router.get("/", async (req, res, next) => {
       // "$Driver.name$",
     ].map((key) => ({ [key]: { [Op.like]: "%" + req.query.search + "%" } }));
   // if (req.query.status) where["status"] = req.query.status;
-  if (req.query.days) {
-    const currentDate = moment();
-    const previousDate = moment().subtract(req.query.days, "days");
-    where["createdAt"] = { [Op.between]: [previousDate, currentDate] };
-  }
-  if (
-    req.query.start &&
-    req.query.end &&
-    new Date(req.query.start) instanceof Date &&
-    new Date(req.query.end) instanceof Date &&
-    isFinite(new Date(req.query.start)) &&
-    isFinite(new Date(req.query.end))
-  ) {
-    const startDate = moment(req.query.start).utcOffset("+05:00").set({
-      hour: 0,
-      minute: 0,
-      second: 0,
-      millisecond: 0,
-    });
-    const endDate = moment(req.query.end).utcOffset("+05:00").set({
-      hour: 23,
-      minute: 59,
-      second: 59,
-      millisecond: 1000,
-    });
-    where["createdAt"] = { [Op.between]: [startDate, endDate] };
-  }
+
   const response = await Ride.findAndCountAll({
     include: [
       {

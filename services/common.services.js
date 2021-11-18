@@ -1,6 +1,7 @@
 const { authenticator } = require("otplib");
 const config = require("../config");
 const { Op } = require("sequelize");
+const moment = require("moment");
 
 exports.digitize = (value, places) => {
   let strValue = value + "";
@@ -70,20 +71,6 @@ exports.modelWiseFilters = (filters, modelname) => {
     };
 };
 
-exports.attachDateFilter = (filters) => {
-  const { to, from } = filters;
-  if (to && from) {
-    createdAt = {
-      [Op.gte]: moment(from).toISOString(),
-      [Op.lte]: moment(to).add(1, "seconds").toISOString(),
-    };
-    filters["createdAt"] = createdAt;
-    delete filters.to;
-    delete filters.from;
-  }
-  return filters;
-};
-
 exports.removeFromObject = (obj, keys = []) => {
   if (Array.isArray(obj)) {
     return Object.assign([], obj).map((item) => {
@@ -111,4 +98,38 @@ exports.removeChildModelFilters = (where) => {
     if (key.includes(".")) delete where[key];
   }
   return where;
+};
+
+exports.attachDateFilter = (requestQuery, where, fieldToBeFiltered) => {
+  try {
+    if (
+      requestQuery.start &&
+      requestQuery.end &&
+      new Date(requestQuery.start) instanceof Date &&
+      new Date(requestQuery.end) instanceof Date &&
+      isFinite(new Date(requestQuery.start)) &&
+      isFinite(new Date(requestQuery.end))
+    ) {
+      const startDate = moment(requestQuery.start).utcOffset("+05:00").set({
+        hour: 0,
+        minute: 0,
+        second: 0,
+        millisecond: 0,
+      });
+      const endDate = moment(requestQuery.end).utcOffset("+05:00").set({
+        hour: 23,
+        minute: 59,
+        second: 59,
+        millisecond: 1000,
+      });
+      where["createdAt"] = { [Op.between]: [startDate, endDate] };
+    } else if (requestQuery.days) {
+      const currentDate = moment();
+      const previousDate = moment().subtract(requestQuery.days, "days");
+      where[fieldToBeFiltered] = { [Op.between]: [previousDate, currentDate] };
+    }
+    return where;
+  } catch (err) {
+    console.log("err", err);
+  }
 };
