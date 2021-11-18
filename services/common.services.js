@@ -1,6 +1,7 @@
 const { authenticator } = require("otplib");
 const config = require("../config");
 const { Op } = require("sequelize");
+const moment = require("moment");
 
 exports.digitize = (value, places) => {
   let strValue = value + "";
@@ -32,7 +33,6 @@ exports.sanitizeFilters = (whereClause, transform = {}) => {
 
 exports.modelWiseFilters = (filters, modelname) => {
   const filterObj = {};
-  console.log("filters1", filters);
   for (const key in filters) {
     model = key.split(".")[0];
     if (filterObj[model] == undefined) {
@@ -54,43 +54,27 @@ exports.modelWiseFilters = (filters, modelname) => {
 
   if (obj) {
     const { to, from } = obj;
-    console.log("to", to, "from", from);
     if (to && from) {
       obj = this.removeFromObject(obj, ["to", "from"])[0];
       obj["createdAt"] = {
         [Op.gte]: moment(from).toISOString(),
-        [Op.lte]: moment(to).add(1, "seconds").toISOString()
+        [Op.lte]: moment(to).add(1, "seconds").toISOString(),
       };
-      console.log(`obj["createdAt"]`, obj["createdAt"]);
     }
     return obj;
   } else
     return {
       //include all elements
       id: {
-        [Op.gt]: 0
-      }
+        [Op.gt]: 0,
+      },
     };
-};
-
-exports.attachDateFilter = filters => {
-  const { to, from } = filters;
-  if (to && from) {
-    createdAt = {
-      [Op.gte]: moment(from).toISOString(),
-      [Op.lte]: moment(to).add(1, "seconds").toISOString()
-    };
-    filters["createdAt"] = createdAt;
-    delete filters.to;
-    delete filters.from;
-  }
-  return filters;
 };
 
 exports.removeFromObject = (obj, keys = []) => {
   if (Array.isArray(obj)) {
-    return Object.assign([], obj).map(item => {
-      keys.forEach(key => {
+    return Object.assign([], obj).map((item) => {
+      keys.forEach((key) => {
         if (item.hasOwnProperty(key)) {
           delete item[key];
         }
@@ -98,8 +82,8 @@ exports.removeFromObject = (obj, keys = []) => {
       return item;
     });
   } else {
-    return [Object.assign({}, obj)].map(item => {
-      keys.forEach(key => {
+    return [Object.assign({}, obj)].map((item) => {
+      keys.forEach((key) => {
         if (item.hasOwnProperty(key)) {
           delete item[key];
         }
@@ -109,9 +93,43 @@ exports.removeFromObject = (obj, keys = []) => {
   }
 };
 
-exports.removeChildModelFilters = where => {
+exports.removeChildModelFilters = (where) => {
   for (const key in where) {
     if (key.includes(".")) delete where[key];
   }
   return where;
+};
+
+exports.attachDateFilter = (requestQuery, where, fieldToBeFiltered) => {
+  try {
+    if (
+      requestQuery.start &&
+      requestQuery.end &&
+      new Date(requestQuery.start) instanceof Date &&
+      new Date(requestQuery.end) instanceof Date &&
+      isFinite(new Date(requestQuery.start)) &&
+      isFinite(new Date(requestQuery.end))
+    ) {
+      const startDate = moment(requestQuery.start).utcOffset("+05:00").set({
+        hour: 0,
+        minute: 0,
+        second: 0,
+        millisecond: 0,
+      });
+      const endDate = moment(requestQuery.end).utcOffset("+05:00").set({
+        hour: 23,
+        minute: 59,
+        second: 59,
+        millisecond: 1000,
+      });
+      where["createdAt"] = { [Op.between]: [startDate, endDate] };
+    } else if (requestQuery.days) {
+      const currentDate = moment();
+      const previousDate = moment().subtract(requestQuery.days, "days");
+      where[fieldToBeFiltered] = { [Op.between]: [previousDate, currentDate] };
+    }
+    return where;
+  } catch (err) {
+    console.log("err", err);
+  }
 };

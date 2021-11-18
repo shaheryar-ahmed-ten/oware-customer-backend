@@ -18,22 +18,24 @@ router.get("/", async (req, res, next) => {
     );
 
     const response = await Inventory.findAll({
-        include: [{ model: Product, attributes: ['name'], include: [{ model: Category, attributes: ['name'] }, { model: Brand, attributes: ['name'] }, { model: UOM, attributes: ['name'] }] },{model: Warehouse, attributes: ['name']}],
+        include: [{ model: Product, attributes: ['name'], include: [{ model: Category, attributes: ['name'] }, { model: Brand, attributes: ['name'] }, { model: UOM, attributes: ['name'] }],required:true },{model: Warehouse, attributes: ['name']}],
         attributes: [
             ['productId', 'id'],
             [Sequelize.fn('sum', Sequelize.col('committedQuantity')), 'committedQuantity'],
             [Sequelize.fn('sum', Sequelize.col('availableQuantity')), 'availableQuantity'],
             [Sequelize.fn('sum', Sequelize.col('dispatchedQuantity')), 'dispatchedQuantity']
         ],
-        where, offset, limit,
+        where, 
+        offset, limit,
         group: ['productId','warehouseId']
     })
     const count = await Inventory.count({
         // distinct: true,
-        // include: [{ model: Product }],
+        include: [{ model: Product ,attributes:['name']}],
         col: 'productId',
         where
     });
+    
     res.json({
         success: true,
         message: 'respond with a resource',

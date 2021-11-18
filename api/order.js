@@ -20,8 +20,10 @@ const {
 } = require("../models");
 const config = require("../config");
 const { Op, Sequelize, fn, col } = require("sequelize");
-const { digitize } = require("../services/common.services");
+const { digitize, attachDateFilter } = require("../services/common.services");
 const { RELATION_TYPES } = require("../enums");
+const ExcelJS = require("exceljs");
+const { CloudWatchLogs } = require("aws-sdk");
 
 // /* GET dispatchOrders listing. */
 router.get("/", async (req, res, next) => {
@@ -31,15 +33,11 @@ router.get("/", async (req, res, next) => {
     let where = {
       // userId: req.userId
     };
+    where = attachDateFilter(req.query, where, "createdAt");
     if (req.query.search)
       where[Op.or] = ["$Inventory.Warehouse.name$", "internalIdForBusiness", "referenceId"].map((key) => ({
         [key]: { [Op.like]: "%" + req.query.search + "%" },
       }));
-    if (req.query.days) {
-      const currentDate = moment();
-      const previousDate = moment().subtract(req.query.days, "days");
-      where["createdAt"] = { [Op.between]: [previousDate, currentDate] };
-    }
     if (req.query.status)
       where[Op.or] = ["status"].map((key) => ({
         [key]: { [Op.eq]: req.query.status },
@@ -71,7 +69,6 @@ router.get("/", async (req, res, next) => {
         },
       ],
       order: [["createdAt", "DESC"]],
-      // subQuery: false,
       where,
       limit,
       offset,
@@ -94,9 +91,136 @@ router.get("/", async (req, res, next) => {
       pages: Math.ceil(response.count / limit),
     });
   } catch (error) {
-    console.log("err", error);
     res.json(error);
   }
+});
+
+router.get("/export", async (req, res, next) => {
+  let where = {};
+  let workbook = new ExcelJS.Workbook();
+
+  worksheet = workbook.addWorksheet("Orders");
+
+  const getColumnsConfig = (columns) =>
+    columns.map((column) => ({ header: column, width: Math.ceil(column.length * 1.5), outlineLevel: 1 }));
+
+  worksheet.columns = getColumnsConfig([
+    "DISPATCH ORDER ID",
+    "PRODUCT",
+    "WAREHOUSE",
+    "UOM",
+    "RECEIVER NAME",
+    "RECEIVER PHONE",
+    "QUANTITY REQUESTED ",
+    "QUANTITY SHIPPED ",
+    "REFERENCE ID",
+    "CREATOR",
+    "CREATED DATE",
+    "STATUS",
+    "ORDER MEMO",
+  ]);
+
+  const { companyId } = await User.findOne({ where: { id: req.userId } });
+  const response = await DispatchOrder.findAndCountAll({
+    include: [
+      {
+        model: Inventory,
+        as: "Inventory",
+        include: [
+          { model: Product, include: [{ model: UOM }] },
+          { model: Company, required: true },
+          { model: Warehouse, required: true },
+        ],
+        where: { customerId: companyId },
+        required: true,
+      },
+      {
+        model: Inventory,
+        as: "Inventories",
+        include: [{ model: Product, include: [{ model: UOM }] }, Company, Warehouse],
+        where: { customerId: companyId },
+        required: true,
+      },
+      {
+        model: User,
+      },
+    ],
+    order: [["createdAt", "DESC"]],
+    where,
+  });
+  for (const { dataValues } of response.rows) {
+    dataValues["ProductOutwards"] = await ProductOutward.findAll({
+      include: ["OutwardGroups", "Vehicle"],
+      attributes: ["quantity", "referenceId", "internalIdForBusiness"],
+      required: false,
+      where: { dispatchOrderId: dataValues.id },
+    });
+  }
+  const orderArray = [];
+  for (const order of response.rows) {
+    for (const inv of order.Inventories) {
+      if (order.dataValues.ProductOutwards && order.dataValues.ProductOutwards.length > 0) {
+        for (const outInv of order.dataValues.ProductOutwards) {
+          orderArray.push([
+            order.internalIdForBusiness || "",
+            inv.Product.name,
+            order.Inventory.Warehouse.name,
+            inv.Product.UOM.name,
+            order.receiverName,
+            order.receiverPhone,
+            inv.OrderGroup.quantity,
+            outInv.OutwardGroups.find((oGroup) => oGroup.inventoryId === inv.OrderGroup.inventoryId)
+              ? outInv.OutwardGroups.find((oGroup) => oGroup.inventoryId === inv.OrderGroup.inventoryId).quantity
+              : 0, // incase of partial/fullfilled i.e 0 < outwards
+            order.referenceId || "",
+            `${order.User.firstName || ""} ${order.User.lastName || ""}`,
+            moment(order.createdAt).tz(req.query.client_Tz).format("DD/MM/yy HH:mm"),
+            order.status == "0"
+              ? "PENDING"
+              : order.status == "1"
+              ? "PARTIALLY FULFILLED"
+              : order.status == "2"
+              ? "FULFILLED"
+              : order.status == "3"
+              ? "CANCELLED"
+              : "",
+            order.orderMemo || "",
+          ]);
+        }
+      } else {
+        orderArray.push([
+          order.internalIdForBusiness || "",
+          inv.Product.name,
+          order.Inventory.Warehouse.name,
+          inv.Product.UOM.name,
+          order.receiverName,
+          order.receiverPhone,
+          inv.OrderGroup.quantity,
+          0, // incase of pending i.e 0 outwards
+          order.referenceId || "",
+          `${order.User.firstName || ""} ${order.User.lastName || ""}`,
+          moment(order.createdAt).tz(req.query.client_Tz).format("DD/MM/yy HH:mm"),
+          order.status == "0"
+            ? "PENDING"
+            : order.status == "1"
+            ? "PARTIALLY FULFILLED"
+            : order.status == "2"
+            ? "FULFILLED"
+            : order.status == "3"
+            ? "CANCELLED"
+            : "",
+          order.orderMemo || "",
+        ]);
+      }
+    }
+  }
+
+  worksheet.addRows(orderArray);
+
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", "attachment; filename=" + "Inventory.xlsx");
+
+  await workbook.xlsx.write(res).then(() => res.end());
 });
 
 /* POST create new dispatchOrder. */
@@ -180,7 +304,6 @@ router.post("/", async (req, res, next) => {
 });
 
 router.get("/relations", async (req, res, next) => {
-  console.log("req.companyId", req.userId);
   const whereClauseWithoutDate = { customerId: req.companyId };
   const relations = {
     warehouses: await sequelize
