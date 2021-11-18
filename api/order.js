@@ -41,8 +41,6 @@ router.get("/", async (req, res, next) => {
       const previousDate = moment().subtract(req.query.days, "days");
       where["createdAt"] = { [Op.between]: [previousDate, currentDate] };
     }
-    console.log(`typeof req.query.start === "object"`, typeof req.query.start === "object");
-    console.log(`typeof req.query.start`, typeof req.query.start);
     if (
       req.query.start &&
       req.query.end &&
@@ -101,6 +99,7 @@ router.get("/", async (req, res, next) => {
       limit,
       offset,
       distinct: true,
+      logging: true,
     });
     for (const { dataValues } of response.rows) {
       dataValues["ProductOutwards"] = await ProductOutward.findAll({
@@ -119,7 +118,6 @@ router.get("/", async (req, res, next) => {
       pages: Math.ceil(response.count / limit),
     });
   } catch (error) {
-    console.log("err", error);
     res.json(error);
   }
 });
@@ -333,7 +331,6 @@ router.post("/", async (req, res, next) => {
 });
 
 router.get("/relations", async (req, res, next) => {
-  console.log("req.companyId", req.userId);
   const whereClauseWithoutDate = { customerId: req.companyId };
   const relations = {
     warehouses: await sequelize

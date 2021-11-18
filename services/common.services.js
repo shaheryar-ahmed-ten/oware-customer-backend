@@ -32,7 +32,6 @@ exports.sanitizeFilters = (whereClause, transform = {}) => {
 
 exports.modelWiseFilters = (filters, modelname) => {
   const filterObj = {};
-  console.log("filters1", filters);
   for (const key in filters) {
     model = key.split(".")[0];
     if (filterObj[model] == undefined) {
@@ -54,31 +53,29 @@ exports.modelWiseFilters = (filters, modelname) => {
 
   if (obj) {
     const { to, from } = obj;
-    console.log("to", to, "from", from);
     if (to && from) {
       obj = this.removeFromObject(obj, ["to", "from"])[0];
       obj["createdAt"] = {
         [Op.gte]: moment(from).toISOString(),
-        [Op.lte]: moment(to).add(1, "seconds").toISOString()
+        [Op.lte]: moment(to).add(1, "seconds").toISOString(),
       };
-      console.log(`obj["createdAt"]`, obj["createdAt"]);
     }
     return obj;
   } else
     return {
       //include all elements
       id: {
-        [Op.gt]: 0
-      }
+        [Op.gt]: 0,
+      },
     };
 };
 
-exports.attachDateFilter = filters => {
+exports.attachDateFilter = (filters) => {
   const { to, from } = filters;
   if (to && from) {
     createdAt = {
       [Op.gte]: moment(from).toISOString(),
-      [Op.lte]: moment(to).add(1, "seconds").toISOString()
+      [Op.lte]: moment(to).add(1, "seconds").toISOString(),
     };
     filters["createdAt"] = createdAt;
     delete filters.to;
@@ -89,8 +86,8 @@ exports.attachDateFilter = filters => {
 
 exports.removeFromObject = (obj, keys = []) => {
   if (Array.isArray(obj)) {
-    return Object.assign([], obj).map(item => {
-      keys.forEach(key => {
+    return Object.assign([], obj).map((item) => {
+      keys.forEach((key) => {
         if (item.hasOwnProperty(key)) {
           delete item[key];
         }
@@ -98,8 +95,8 @@ exports.removeFromObject = (obj, keys = []) => {
       return item;
     });
   } else {
-    return [Object.assign({}, obj)].map(item => {
-      keys.forEach(key => {
+    return [Object.assign({}, obj)].map((item) => {
+      keys.forEach((key) => {
         if (item.hasOwnProperty(key)) {
           delete item[key];
         }
@@ -109,7 +106,7 @@ exports.removeFromObject = (obj, keys = []) => {
   }
 };
 
-exports.removeChildModelFilters = where => {
+exports.removeChildModelFilters = (where) => {
   for (const key in where) {
     if (key.includes(".")) delete where[key];
   }
