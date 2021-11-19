@@ -312,7 +312,7 @@ router.get("/relations", async (req, res, next) => {
         `select w.id,w.name from DispatchOrders do 
       inner join Inventories i on do.inventoryId = i.id 
       inner join Warehouses w on i.warehouseId = w.id 
-      where do.userId = ${req.userId}
+      where i.customerId = ${req.companyId}
       group by w.name,w.id`
       )
       .then((item) => item[0]),
