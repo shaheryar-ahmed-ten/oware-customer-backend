@@ -60,22 +60,22 @@ router.get('/', async (req, res) => {
   const rideStats = {
     total: await Ride.aggregate('id', 'count', {
       distinct: true,
-      where: whereClauseWithDate('createdAt')
+      where: whereClauseWithDate('updatedAt')
     }),
     unassigned: await Ride.aggregate('id', 'count', {
-      where: whereClauseWithDateUnassigned('createdAt')
+      where: whereClauseWithDateUnassigned('updatedAt')
     }),
     assigned: await Ride.aggregate('id', 'count', {
-      where: whereClauseWithDateAssigned('createdAt')
+      where: whereClauseWithDateAssigned('updatedAt')
     }),
     inprogress: await Ride.aggregate('id', 'count', {
-      where: whereClauseWithDateInProgress('createdAt')
+      where: whereClauseWithDateInProgress('updatedAt')
     }),
     completed: await Ride.aggregate('id', 'count', {
-      where: whereClauseWithDateCompleted('createdAt')
+      where: whereClauseWithDateCompleted('updatedAt')
     }),
     cancelled: await Ride.aggregate('id', 'count', {
-      where: whereClauseWithDateCancelled('createdAt')
+      where: whereClauseWithDateCancelled('updatedAt')
     })
   }
 
