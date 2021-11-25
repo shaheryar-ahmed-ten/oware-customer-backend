@@ -304,7 +304,6 @@ router.post("/", async (req, res, next) => {
 });
 
 router.get("/relations", async (req, res, next) => {
-  console.log("req.companyId", req.companyId, "req.userId", req.userId);
   const whereClauseWithoutDate = { customerId: req.companyId };
   const relations = {
     warehouses: await sequelize
@@ -318,7 +317,6 @@ router.get("/relations", async (req, res, next) => {
       .then((item) => item[0]),
     products: [],
   };
-  console.log("relations", relations);
   res.json({
     success: true,
     message: "respond with a resource",
