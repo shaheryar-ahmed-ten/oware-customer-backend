@@ -35,20 +35,9 @@ router.get("/", async (req, res, next) => {
   where = { customerId: req.user.companyId };
   where = attachDateFilter(req.query, where, "createdAt");
   if (req.query.search)
-    where[Op.or] = [
-      "$pickupCity.name$",
-      "$dropoffCity.name$",
-      "pickupAddress",
-      "dropoffAddress",
-      // "$Vehicle.Car.CarModel.name$",
-      // "$Vehicle.registrationNumber$",
-      "id",
-      // "$Customer.name$",
-      // "$Driver.Vendor.name$",
-      // "$Driver.name$",
-    ].map((key) => ({ [key]: { [Op.like]: "%" + req.query.search + "%" } }));
-  // if (req.query.status) where["status"] = req.query.status;
-
+    where[Op.or] = ["$pickupCity.name$", "$dropoffCity.name$", "pickupAddress", "dropoffAddress", "id"].map((key) => ({
+      [key]: { [Op.like]: "%" + req.query.search + "%" },
+    }));
   const response = await Ride.findAndCountAll({
     include: [
       {
@@ -84,6 +73,7 @@ router.get("/", async (req, res, next) => {
     limit,
     offset,
   });
+
   res.json({
     success: true,
     message: "respond with a resource",

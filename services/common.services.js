@@ -133,3 +133,11 @@ exports.attachDateFilter = (requestQuery, where, fieldToBeFiltered) => {
     console.log("err", err);
   }
 };
+
+exports.isValidDate = (date) => {
+  return date && new Date(date) instanceof Date && isFinite(new Date(date)) ? true : false;
+};
+
+exports.convertToUTC = (date) => {
+  return new Date(moment(date).tz("Africa/Abidjan"));
+};
