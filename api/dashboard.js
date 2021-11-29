@@ -29,10 +29,10 @@ router.get('/', async (req, res) => {
     }
   };
   const whereClauseWithoutDateRide = {
-    customerId: req.companyId, status:"UNASSIGNED"
+    customerId: req.companyId, status:"Not Assigned"
   };
   const whereClauseWithoutDateCompletedRide = {
-    customerId: req.companyId, status:"COMPLETED"
+    customerId: req.companyId, status:"Load Delivered"
   };
 
   const inboundStats = {
