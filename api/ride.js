@@ -19,13 +19,14 @@ const {
   Driver,
 } = require("../models");
 const { sendForgotPasswordOTPEmail } = require("../services/mailer.service");
-const { generateOTP, attachDateFilter } = require("../services/common.services");
+const { generateOTP, attachDateFilter,isValidDate } = require("../services/common.services");
 const config = require("../config");
 const authService = require("../services/auth.service");
 const { APPS } = require("../enums");
 const moment = require("moment-timezone");
 const ExcelJS = require("exceljs");
 const { Op, Sequelize } = require("sequelize");
+// const { digitize, addActivityLog, isValidDate, convertToUTC } = require("../services/common.services");
 
 /* GET rides listing. */
 router.get("/", async (req, res, next) => {
@@ -180,10 +181,11 @@ router.get("/export", async (req, res, next) => {
       // row.driverIncentive,
       row.pickupCity.name,
       row.pickupAddress,
-      moment(row.pickupDate).tz(req.query.client_Tz).format("DD/MM/yy h:mm A"),
+      // row.pickupDate ? moment(row.pickupDate).tz(req.query.client_Tz).format("DD/MM/yy h:mm A"): " ",
+      isValidDate(row.pickupDate) ? moment(row.pickupDate).tz(req.query.client_Tz).format("DD/MM/yy h:mm A") : " ",
       row.dropoffCity.name,
       row.dropoffAddress,
-      moment(row.dropoffDate).tz(req.query.client_Tz).format("DD/MM/yy h:mm A"),
+      isValidDate(row.dropoffDate) ? moment(row.dropoffDate).tz(req.query.client_Tz).format("DD/MM/yy h:mm A") : " ",
       row.pocName,
       row.pocNumber,
       // row.eta !== null && row.eta !== 0 ? row.eta / 60 : 0,
