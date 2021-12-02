@@ -77,7 +77,7 @@ router.get("/", async (req, res, next) => {
     for (const { dataValues } of response.rows) {
       dataValues["ProductOutwards"] = await ProductOutward.findAll({
         include: ["OutwardGroups", "Vehicle"],
-        attributes: ["quantity", "referenceId", "internalIdForBusiness"],
+        attributes: ["quantity", "referenceId", "internalIdForBusiness","externalVehicle"],
         required: false,
         where: { dispatchOrderId: dataValues.id },
       });
@@ -179,7 +179,7 @@ router.get("/export", async (req, res, next) => {
   for (const { dataValues } of response.rows) {
     dataValues["ProductOutwards"] = await ProductOutward.findAll({
       include: ["OutwardGroups", "Vehicle"],
-      attributes: ["quantity", "referenceId", "internalIdForBusiness"],
+      attributes: ["quantity", "referenceId", "internalIdForBusiness","externalVehicle"],
       required: false,
       where: { dispatchOrderId: dataValues.id },
     });

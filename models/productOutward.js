@@ -59,8 +59,12 @@ module.exports = (sequelize, DataTypes) => {
       vehicleId: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        validate: { notEmpty: { msg: "Dispatch order cannot be empty" } }
-      }
+        // validate: { notEmpty: { msg: "Dispatch order cannot be empty" } }
+      },
+      externalVehicle:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
     },
     {
       sequelize,
