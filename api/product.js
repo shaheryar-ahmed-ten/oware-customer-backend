@@ -146,8 +146,8 @@ worksheet.addRows(
     row.Warehouse.name,
     row.Product.Brand.name,
     row.Product.UOM.name,
-    row.committedQuantity,
     row.availableQuantity,
+    row.committedQuantity,
     row.dispatchedQuantity,
   ])
 );
