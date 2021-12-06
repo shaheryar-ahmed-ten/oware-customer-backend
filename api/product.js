@@ -143,6 +143,7 @@ worksheet.addRows(
   response.map((row) => [
     row.Product.name,
     row.Product.Category.name,
+    row.Warehouse.name,
     row.Product.Brand.name,
     row.Product.UOM.name,
     row.committedQuantity,
