@@ -132,16 +132,16 @@ router.get("/export", async (req, res, next) => {
     "PICKUP CITY",
     "PICKUP ADDRESS",
     "PICKUP DATE",
-    "DROPOFF CITY",
-    "DROPOFF ADDRESS",
-    "DROPOFF DATE",
-    "POC NAME",
-    "POC NUMBER",
+    // "DROPOFF CITY",
+    // "DROPOFF ADDRESS",
+    // "DROPOFF DATE",
+    // "POC NAME",
+    // "POC NUMBER",
     // "ETA(MINUTES)",
     // "TRIP COMPLETION TIME(MINUTES)",
     // "CURRENT LOCATION",
     "WEIGHT OF CARGO(KG)",
-    "MEMO",
+    // "MEMO",
   ]);
 
   const response = await Ride.findAndCountAll({
@@ -200,28 +200,49 @@ router.get("/export", async (req, res, next) => {
       row.pickupAddress,
       // row.pickupDate ? moment(row.pickupDate).tz(req.query.client_Tz).format("DD/MM/yy h:mm A"): " ",
       isValidDate(row.pickupDate) ? moment(row.pickupDate).tz(req.query.client_Tz).format("DD/MM/yy h:mm A") : " ",
-      row.dropoffCity.name,
-      row.dropoffAddress,
-      isValidDate(row.dropoffDate) ? moment(row.dropoffDate).tz(req.query.client_Tz).format("DD/MM/yy h:mm A") : " ",
-      row.pocName,
-      row.pocNumber,
+      // row.dropoffCity.name,
+      // row.dropoffAddress,
+      // isValidDate(row.dropoffDate) ? moment(row.dropoffDate).tz(req.query.client_Tz).format("DD/MM/yy h:mm A") : " ",
+      // row.pocName,
+      // row.pocNumber,
       // row.eta !== null && row.eta !== 0 ? row.eta / 60 : 0,
       // row.completionTime !== null && row.completionTime !== 0 ? row.completionTime / 60 : 0,
       // row.currentLocation,
       row.weightCargo,
-      row.memo,
+      // row.memo,
     ])
   );
 
   // Ride Products Sheet
 
-  worksheet = workbook.addWorksheet("Product Details");
+  worksheet = workbook.addWorksheet("Dropoff Details");
 
-  worksheet.columns = getColumnsConfig(["RIDE ID", "CATEGORY", "PRODUCT NAME", "QUANTITY"]);
+  worksheet.columns = getColumnsConfig([
+    "RIDE ID", 
+    "OUTWARD ID", 
+    "DROPOFF CITY", 
+    "DROPOFF ADDRESS", 
+    "DROPOFF DATE",
+    "POC NAME",
+    "POC NUMBER",
+    "CURRENT LOCATION",
+    "MEMO"
+  ]);
 
   response.rows.map((row) => {
     worksheet.addRows(
-      row.RideProducts.map((product) => [row.id, product.Category.name, product.name, product.quantity])
+      row.RideDropoff.map((dropoff) => [
+        row.id, 
+        dropoff.outwardId, 
+        dropoff.DropoffCity.name,
+        dropoff.address, 
+        isValidDate(dropoff.dateTime) ? moment(dropoff.dateTime).tz(req.query.client_Tz).format("DD/MM/yy h:mm A") : " ",
+        dropoff.pocName,
+        dropoff.pocNumber,
+        dropoff.currentLocation,
+        dropoff.memo
+      
+      ])
     );
   });
 
