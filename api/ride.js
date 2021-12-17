@@ -39,7 +39,7 @@ router.get("/", async (req, res, next) => {
   where = { customerId: req.user.companyId };
   where = attachDateFilter(req.query, where, "createdAt");
   if (req.query.search)
-    where[Op.or] = ["$pickupCity.name$", "$dropoffCity.name$", "pickupAddress", "dropoffAddress", "id"].map((key) => ({
+    where[Op.or] = ["$pickupCity.name$", "pickupAddress", "id"].map((key) => ({
       [key]: { [Op.like]: "%" + req.query.search + "%" },
     }));
     const response = await Ride.findAndCountAll({
@@ -96,6 +96,10 @@ router.get("/", async (req, res, next) => {
 router.get("/export", async (req, res, next) => {
   let where = { customerId: req.user.companyId };
 
+  if (req.query.search)
+  where[Op.or] = ["$pickupCity.name$","pickupAddress", "id"].map((key) => ({
+    [key]: { [Op.like]: "%" + req.query.search + "%" },
+  }));
   if (req.query.days) {
     const currentDate = moment();
     const previousDate = moment().subtract(req.query.days, "days");
@@ -190,7 +194,7 @@ router.get("/export", async (req, res, next) => {
       // row.Vehicle.Vendor.name,
       // row.Vehicle.Car.CarMake.name + " " + row.Vehicle.Car.CarModel.name,
       row.Vehicle ? row.Vehicle.Car.CarMake.name + " " + row.Vehicle.Car.CarModel.name : " ",
-      row.Vehicle ? row.Vehicle.Driver.name : " ",
+      row.Driver ? row.Driver.name : " ",
       row.Vehicle ? row.Vehicle.registrationNumber : " ",
       row.price,
       // row.cost,
@@ -256,24 +260,34 @@ router.get("/:id", async (req, res, next) => {
   let where = {};
   const response = await Ride.findOne({
     order: [["updatedAt", "DESC"]],
-    where: { id: req.params.id, customerId: req.user.companyId },
+    where: { id: req.params.id },
     include: [
       {
-        model: Vehicle,
-        include: [Driver, { model: Company, as: "Vendor" }],
+        model: Company,
+        as: "Customer",
       },
       {
-        model: RideProduct,
-        include: [Category],
+        model: Vehicle,
+        include: [
+          {
+            model: Company,
+            as: "Vendor",
+          },
+          {
+            model: Car,
+            include: [CarModel, CarMake, VehicleType],
+          },
+        ],
+      },
+      {
+        model: Driver,
+        include: [{ model: Company, as: "Vendor" }],
       },
       {
         model: City,
         as: "pickupCity",
       },
-      {
-        model: City,
-        as: "dropoffCity",
-      },
+      { model: RideDropoff, as: "RideDropoff", include: [{ model: City, as: "DropoffCity" }] },
     ],
   });
 
