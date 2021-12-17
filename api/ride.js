@@ -260,7 +260,7 @@ router.get("/:id", async (req, res, next) => {
   let where = {};
   const response = await Ride.findOne({
     order: [["updatedAt", "DESC"]],
-    where: { id: req.params.id },
+    where: { id: req.params.id, customerId: req.user.companyId  },
     include: [
       {
         model: Company,
