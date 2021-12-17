@@ -17,6 +17,9 @@ const {
   Car,
   Category,
   Driver,
+  VehicleType,
+  File,
+  RideDropoff,
 } = require("../models");
 const { sendForgotPasswordOTPEmail } = require("../services/mailer.service");
 const { generateOTP, attachDateFilter,isValidDate } = require("../services/common.services");
@@ -39,40 +42,45 @@ router.get("/", async (req, res, next) => {
     where[Op.or] = ["$pickupCity.name$", "$dropoffCity.name$", "pickupAddress", "dropoffAddress", "id"].map((key) => ({
       [key]: { [Op.like]: "%" + req.query.search + "%" },
     }));
-  const response = await Ride.findAndCountAll({
-    include: [
-      {
-        model: Vehicle,
-        include: [
-          Driver,
-          { model: Company, as: "Vendor" },
-          {
-            model: Car,
-            include: [{ model: CarMake }, { model: CarModel }],
-          },
-        ],
-      },
-      {
-        model: RideProduct,
-        include: [Category],
-      },
-      {
-        model: City,
-        as: "pickupCity",
-        required: true,
-      },
-      {
-        model: City,
-        as: "dropoffCity",
-        required: true,
-      },
-    ],
-    distinct: true,
-    // subQuery: false,
-    order: [["createdAt", "DESC"]],
-    where,
-    limit,
-    offset,
+    const response = await Ride.findAndCountAll({
+      distinct: true,
+      include: [
+        {
+          model: Company,
+          as: "Customer",
+          required: true,
+        },
+        {
+          model: Vehicle,
+          include: [
+            {
+              model: Company,
+              as: "Vendor",
+            },
+            {
+              model: Car,
+              include: [{ model: CarModel }, CarMake, VehicleType],
+            },
+          ],
+        },
+        {
+          model: Driver,
+          include: [{ model: Company, as: "Vendor" }],
+        },
+        {
+          model: City,
+          as: "pickupCity",
+        },
+        {
+          model: RideDropoff,
+          as: "RideDropoff",
+          include: ["DropoffCity", "ProductOutward"],
+        },
+      ],
+      order: [["updatedAt", "DESC"]],
+      where,
+      limit,
+      offset,
   });
 
   res.json({
@@ -137,32 +145,41 @@ router.get("/export", async (req, res, next) => {
   ]);
 
   const response = await Ride.findAndCountAll({
+    distinct: true,
     include: [
+      {
+        model: Company,
+        as: "Customer",
+        required: true,
+      },
       {
         model: Vehicle,
         include: [
-          Driver,
-          { model: Company, as: "Vendor" },
+          {
+            model: Company,
+            as: "Vendor",
+          },
           {
             model: Car,
-            include: [{ model: CarMake }, { model: CarModel }],
+            include: [{ model: CarModel }, CarMake, VehicleType],
           },
         ],
       },
       {
-        model: RideProduct,
-        include: [Category],
+        model: Driver,
+        include: [{ model: Company, as: "Vendor" }],
       },
       {
         model: City,
         as: "pickupCity",
       },
       {
-        model: City,
-        as: "dropoffCity",
+        model: RideDropoff,
+        as: "RideDropoff",
+        include: ["DropoffCity", "ProductOutward"],
       },
     ],
-    order: [["createdAt", "DESC"]],
+    order: [["updatedAt", "DESC"]],
     where,
   });
 
