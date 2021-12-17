@@ -23,6 +23,7 @@ router.get('/', async (req, res) => {
   const whereClauseWithDateReached = dateKey => ({ customerId: req.companyId, status:"Reached", [dateKey]: { [Op.between]: [previousDate, currentDate] } });
   const whereClauseWithDateOffloadingInProgress = dateKey => ({ customerId: req.companyId, status:"Offloading in-progress", [dateKey]: { [Op.between]: [previousDate, currentDate] } });
   const whereClauseWithDateLoadDelivered = dateKey => ({ customerId: req.companyId, status:"Load Delivered", [dateKey]: { [Op.between]: [previousDate, currentDate] } });
+  const whereClauseWithDateCompleted = dateKey => ({ customerId: req.companyId, status:"Completed", [dateKey]: { [Op.between]: [previousDate, currentDate] } });
   const whereClauseWithoutDate = {
     customerId: req.companyId, availableQuantity: {
       [Op.ne]: 0
@@ -32,7 +33,7 @@ router.get('/', async (req, res) => {
     customerId: req.companyId, status:"Not Assigned"
   };
   const whereClauseWithoutDateCompletedRide = {
-    customerId: req.companyId, status:"Load Delivered"
+    customerId: req.companyId, status:"Completed"
   };
 
   const inboundStats = {
@@ -97,6 +98,9 @@ router.get('/', async (req, res) => {
     }),
     loadDelivered: await Ride.aggregate('id', 'count', {
       where: whereClauseWithDateLoadDelivered('updatedAt')
+    }),
+    completed: await Ride.aggregate('id', 'count', {
+      where: whereClauseWithDateCompleted('updatedAt')
     }),
     cancelled: await Ride.aggregate('id', 'count', {
       where: whereClauseWithDateCancelled('updatedAt')
