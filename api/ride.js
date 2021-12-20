@@ -39,7 +39,10 @@ router.get("/", async (req, res, next) => {
   where = { customerId: req.user.companyId };
   where = attachDateFilter(req.query, where, "createdAt");
   if (req.query.search)
-    where[Op.or] = ["$pickupCity.name$", "pickupAddress", "id"].map((key) => ({
+    where[Op.or] = [
+      // "$pickupCity.name$", 
+      "pickupAddress", 
+      "id"].map((key) => ({
       [key]: { [Op.like]: "%" + req.query.search + "%" },
     }));
     const response = await Ride.findAndCountAll({
