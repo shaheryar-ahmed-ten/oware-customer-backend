@@ -21,6 +21,7 @@ const {
   File,
   RideDropoff,
 } = require("../models");
+const models = require("../models/index");
 const { sendForgotPasswordOTPEmail } = require("../services/mailer.service");
 const { generateOTP, attachDateFilter,isValidDate } = require("../services/common.services");
 const config = require("../config");
@@ -120,7 +121,7 @@ router.get("/export", async (req, res, next) => {
 
   let workbook = new ExcelJS.Workbook();
 
-  let worksheet = workbook.addWorksheet("Rides");
+  let worksheet = workbook.addWorksheet("Loads");
 
   const getColumnsConfig = (columns) =>
     columns.map((column) => ({ header: column, width: Math.ceil(column.length * 1.5), outlineLevel: 1 }));
@@ -199,12 +200,12 @@ router.get("/export", async (req, res, next) => {
       row.Vehicle ? row.Vehicle.Car.CarMake.name + " " + row.Vehicle.Car.CarModel.name : " ",
       row.Driver ? row.Driver.name : " ",
       row.Vehicle ? row.Vehicle.registrationNumber : " ",
-      row.price,
+      row.price ? row.price : " ",
       // row.cost,
       // row.customerDiscount,
       // row.driverIncentive,
-      row.pickupCity.name,
-      row.pickupAddress,
+      row.pickupCity ? row.pickupCity.name : " ",
+      row.pickupAddress ? row.pickupAddress : " ",
       // row.pickupDate ? moment(row.pickupDate).tz(req.query.client_Tz).format("DD/MM/yy h:mm A"): " ",
       isValidDate(row.pickupDate) ? moment(row.pickupDate).tz(req.query.client_Tz).format("DD/MM/yy h:mm A") : " ",
       // row.dropoffCity.name,
@@ -215,7 +216,7 @@ router.get("/export", async (req, res, next) => {
       // row.eta !== null && row.eta !== 0 ? row.eta / 60 : 0,
       // row.completionTime !== null && row.completionTime !== 0 ? row.completionTime / 60 : 0,
       // row.currentLocation,
-      row.weightCargo,
+      row.weightCargo ? row.weightCargo : " ",
       // row.memo,
     ])
   );
@@ -240,14 +241,14 @@ router.get("/export", async (req, res, next) => {
     worksheet.addRows(
       row.RideDropoff.map((dropoff) => [
         row.id, 
-        dropoff.outwardId, 
-        dropoff.DropoffCity.name,
-        dropoff.address, 
+        dropoff.ProductOutward ? dropoff.ProductOutward.internalIdForBusiness : " ", 
+        dropoff.DropoffCity ? dropoff.DropoffCity.name : " ",
+        dropoff.address ? dropoff.address : " ", 
         isValidDate(dropoff.dateTime) ? moment(dropoff.dateTime).tz(req.query.client_Tz).format("DD/MM/yy h:mm A") : " ",
-        dropoff.pocName,
-        dropoff.pocNumber,
-        dropoff.currentLocation,
-        dropoff.memo
+        dropoff.pocName ? dropoff.pocName : " ",
+        dropoff.pocNumber ? dropoff.pocNumber : " ",
+        dropoff.currentLocation ? dropoff.currentLocation : " ",
+        dropoff.memo ? dropoff.memo : " ",
       
       ])
     );
@@ -290,7 +291,7 @@ router.get("/:id", async (req, res, next) => {
         model: City,
         as: "pickupCity",
       },
-      { model: RideDropoff, as: "RideDropoff", include: [{ model: City, as: "DropoffCity" }] },
+      { model: RideDropoff, as: "RideDropoff", include: [{ model: City, as: "DropoffCity" },{ model: models.ProductOutward, as: "ProductOutward" }] },
     ],
   });
 
