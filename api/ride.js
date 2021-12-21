@@ -127,7 +127,7 @@ router.get("/export", async (req, res, next) => {
     columns.map((column) => ({ header: column, width: Math.ceil(column.length * 1.5), outlineLevel: 1 }));
 
   worksheet.columns = getColumnsConfig([
-    "RIDE ID",
+    "LOAD ID",
     "STATUS",
     // "VENDOR",
     "VEHICLE TYPE",
@@ -226,7 +226,7 @@ router.get("/export", async (req, res, next) => {
   worksheet = workbook.addWorksheet("Dropoff Details");
 
   worksheet.columns = getColumnsConfig([
-    "RIDE ID", 
+    "LOAD ID", 
     "OUTWARD ID", 
     "DROPOFF CITY", 
     "DROPOFF ADDRESS", 
