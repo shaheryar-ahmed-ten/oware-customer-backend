@@ -77,7 +77,7 @@ router.get("/", async (req, res, next) => {
     for (const { dataValues } of response.rows) {
       dataValues["ProductOutwards"] = await ProductOutward.findAll({
         include: ["OutwardGroups", "Vehicle"],
-        attributes: ["quantity", "referenceId", "internalIdForBusiness"],
+        attributes: ["quantity", "referenceId", "internalIdForBusiness","externalVehicle"],
         required: false,
         where: { dispatchOrderId: dataValues.id },
       });
@@ -120,6 +120,34 @@ router.get("/export", async (req, res, next) => {
     "ORDER MEMO",
   ]);
 
+  if (req.query.days) {
+    const currentDate = moment();
+    const previousDate = moment().subtract(req.query.days, "days");
+    where["createdAt"] = { [Op.between]: [previousDate, currentDate] };
+  } else if (req.query.startingDate && req.query.endingDate) {
+    const startDate = moment(req.query.startingDate);
+    const endDate = moment(req.query.endingDate).set({
+      hour: 23,
+      minute: 53,
+      second: 59,
+      millisecond: 0,
+    });
+    where["createdAt"] = { [Op.between]: [startDate, endDate] };
+  }
+
+  if (req.query.search)
+      where[Op.or] = ["$Inventory.Warehouse.name$", "internalIdForBusiness", "referenceId"].map((key) => ({
+        [key]: { [Op.like]: "%" + req.query.search + "%" },
+      }));
+  if (req.query.status)
+    where[Op.or] = ["status"].map((key) => ({
+      [key]: { [Op.eq]: req.query.status },
+    }));
+  if (req.query.warehouse)
+    where[Op.or] = ["$Inventory.Warehouse.id$"].map((key) => ({
+      [key]: { [Op.eq]: req.query.warehouse },
+    }));
+
   const { companyId } = await User.findOne({ where: { id: req.userId } });
   const response = await DispatchOrder.findAndCountAll({
     include: [
@@ -151,7 +179,7 @@ router.get("/export", async (req, res, next) => {
   for (const { dataValues } of response.rows) {
     dataValues["ProductOutwards"] = await ProductOutward.findAll({
       include: ["OutwardGroups", "Vehicle"],
-      attributes: ["quantity", "referenceId", "internalIdForBusiness"],
+      attributes: ["quantity", "referenceId", "internalIdForBusiness","externalVehicle"],
       required: false,
       where: { dispatchOrderId: dataValues.id },
     });
@@ -304,7 +332,6 @@ router.post("/", async (req, res, next) => {
 });
 
 router.get("/relations", async (req, res, next) => {
-  console.log("req.companyId", req.companyId, "req.userId", req.userId);
   const whereClauseWithoutDate = { customerId: req.companyId };
   const relations = {
     warehouses: await sequelize
@@ -318,7 +345,6 @@ router.get("/relations", async (req, res, next) => {
       .then((item) => item[0]),
     products: [],
   };
-  console.log("relations", relations);
   res.json({
     success: true,
     message: "respond with a resource",

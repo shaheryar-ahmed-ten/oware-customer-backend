@@ -20,17 +20,17 @@ module.exports = (sequelize, DataTypes) => {
       Ride.belongsTo(models.Driver, {
         foreignKey: "driverId",
       });
+      Ride.belongsTo(models.Company, {
+        foreignKey: "customerId",
+        as: "Customer",
+      });
+      Ride.hasMany(models.RideDropoff, {
+        foreignKey: "rideId",
+        as: "RideDropoff",
+      });
       Ride.belongsTo(models.City, {
         foreignKey: "pickupCityId",
         as: "pickupCity",
-      });
-      Ride.belongsTo(models.City, {
-        foreignKey: "dropoffCityId",
-        as: "dropoffCity",
-      });
-      Ride.hasMany(models.RideProduct, {
-        foreignKey: "rideId",
-        sourceKey: "id",
       });
     }
   }
@@ -45,47 +45,58 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      vehicleId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
-      driverId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
-      // manifestId: {
-      //   type: DataTypes.INTEGER,
-      //   allowNull: true
-      // },
-      // internalIdForBusiness: DataTypes.STRING,
-      pickupDate: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        validate: { notEmpty: { msg: "Please select pickup date" } },
-      },
-      dropoffDate: {
-        type: DataTypes.DATE,
-        allowNull: true,
-        validate: { notEmpty: { msg: "Please select dropoff date" } },
-      },
-      pickupAddress: DataTypes.STRING,
-      pickupCityId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
-      dropoffCityId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
-      dropoffAddress: DataTypes.STRING,
-      cancellationReason: DataTypes.STRING,
-      cancellationComment: DataTypes.STRING,
       status: {
         type: DataTypes.ENUM({
           values: Object.keys(RIDE_STATUS),
         }),
         allowNull: false,
         defaultValue: RIDE_STATUS.UNASSIGNED,
+      },
+      vehicleId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      driverId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      // manifestId: {
+      //   type: DataTypes.INTEGER,
+      //   allowNull: true,
+      // },
+      internalIdForBusiness: DataTypes.STRING,
+      pickupDate: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        validate: { notEmpty: { msg: "Please select pickup date" } },
+      },
+      pickupAddress: DataTypes.STRING,
+      pickupCityId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      cancellationReason: DataTypes.STRING,
+      cancellationComment: DataTypes.STRING,
+
+      weightCargo: {
+        type: DataTypes.FLOAT,
+        allowNull: true,
+      },
+      eta: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      completionTime: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      eirId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      builtyId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
       },
       price: {
         type: DataTypes.INTEGER,
@@ -102,42 +113,11 @@ module.exports = (sequelize, DataTypes) => {
       driverIncentive: {
         type: DataTypes.INTEGER,
         allowNull: true,
-      },memo:{
-        type: DataTypes.TEXT,
+      },
+      pickupLocation: {
+        type: DataTypes.JSON,
         allowNull: true,
       },
-      weightCargo: {
-        type: DataTypes.FLOAT,
-        allowNull: true,
-      },
-      pocName: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      pocNumber: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      eta: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      },
-      completionTime: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      },
-      currentLocation: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      // eirId: {
-      //   type: DataTypes.INTEGER,
-      //   allowNull: true,
-      // },
-      // builtyId: {
-      //   type: DataTypes.INTEGER,
-      //   allowNull: true,
-      // },
     },
     {
       sequelize,
