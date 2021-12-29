@@ -66,7 +66,27 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: { notEmpty: { msg: "Warehouse cannot be empty" } }
-      }
+      },
+      vehicleType: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      vehicleName: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      vehicleNumber: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      driverName: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      memo: {
+        type: DataTypes.TEXT,
+        allowNull: true
+      },
     },
     {
       sequelize,
