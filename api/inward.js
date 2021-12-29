@@ -56,6 +56,7 @@ router.get("/", async (req, res, next) => {
         model: Warehouse,
         required: true,
       },
+      { model: InwardGroup, as: "InwardGroup", include: ["InventoryDetail"] }
     ],
     order: [["createdAt", "DESC"]],
     where,
@@ -90,11 +91,20 @@ router.get("/export", async (req, res, next) => {
     "WAREHOUSE",
     "UOM",
     "QUANTITY",
+    "VEHICLE TYPE",
+    "VEHICLE NUMBER",
+    "VEHICLE NAME",
+    "DRIVER NAME",
     "REFERENCE ID",
     "CREATOR",
     "INWARD DATE",
+    "MANUFACTURING DATE",
+    "EXPIRY DATE",
+    "BATCH NUMBER",
+    "BATCH NAME",
+    "MEMO",
   ]);
-  
+
   if (req.query.search)
     where[Op.or] = ["internalIdForBusiness", "$Warehouse.name$", "referenceId"].map((key) => ({
       [key]: { [Op.like]: "%" + req.query.search + "%" },
@@ -145,9 +155,26 @@ router.get("/export", async (req, res, next) => {
         inward.Warehouse.name,
         Product.UOM.name,
         Product.InwardGroup.quantity,
+        inward.vehicleType || "",
+        inward.vehicleNumber || "",
+        inward.vehicleName || "",
+        inward.driverName || "",
         inward.referenceId || "",
         `${inward.User.firstName || ""} ${inward.User.lastName || ""}`,
         moment(inward.createdAt).tz(req.query.client_Tz).format("DD/MM/yy HH:mm"),
+        InwardGroup.InventoryDetail && InwardGroup.InventoryDetail.manufacturingDate
+          ? moment(InwardGroup.InventoryDetail.manufacturingDate).tz(req.query.client_Tz).format("DD/MM/yy HH:mm")
+          : "",
+        InwardGroup.InventoryDetail && InwardGroup.InventoryDetail.expiryDate
+          ? moment(InwardGroup.InventoryDetail.expiryDate).tz(req.query.client_Tz).format("DD/MM/yy HH:mm")
+          : "",
+        InwardGroup.InventoryDetail && InwardGroup.InventoryDetail.batchNumber
+          ? InwardGroup.InventoryDetail.batchNumber
+          : "",
+        InwardGroup.InventoryDetail && InwardGroup.InventoryDetail.batchName
+          ? InwardGroup.InventoryDetail.batchName
+          : "",
+        inward.memo || "",
       ]);
     }
   }
