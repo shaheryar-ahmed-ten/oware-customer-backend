@@ -12,24 +12,28 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       Inventory.belongsTo(models.Product, {
-        foreignKey: "productId"
+        foreignKey: "productId",
       });
       Inventory.belongsTo(models.Warehouse, {
-        foreignKey: "warehouseId"
+        foreignKey: "warehouseId",
       });
       Inventory.belongsTo(models.Company, {
-        foreignKey: "customerId"
+        foreignKey: "customerId",
       });
       Inventory.hasMany(models.DispatchOrder, {
-        foreignKey: "inventoryId"
+        foreignKey: "inventoryId",
       });
       Inventory.belongsToMany(models.DispatchOrder, {
         through: models.OrderGroup,
-        foreignKey: "inventoryId"
+        foreignKey: "inventoryId",
       });
       Inventory.belongsToMany(models.ProductOutward, {
         through: models.OutwardGroup,
-        foreignKey: "inventoryId"
+        foreignKey: "inventoryId",
+      });
+      Inventory.hasMany(models.InventoryDetail, {
+        foreignKey: "inventoryId",
+        as: "InventoryDetail",
       });
     }
   }
@@ -39,32 +43,32 @@ module.exports = (sequelize, DataTypes) => {
       totalInwardQuantity: DataTypes.INTEGER,
       committedQuantity: {
         type: DataTypes.INTEGER,
-        defaultValue: 0
+        defaultValue: 0,
       },
       dispatchedQuantity: {
         type: DataTypes.INTEGER,
-        defaultValue: 0
+        defaultValue: 0,
       },
       productId: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        validate: { notEmpty: { msg: "Product cannot be empty" } }
+        validate: { notEmpty: { msg: "Product cannot be empty" } },
       },
       customerId: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        validate: { notEmpty: { msg: "Customer cannot be empty" } }
+        validate: { notEmpty: { msg: "Customer cannot be empty" } },
       },
       warehouseId: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        validate: { notEmpty: { msg: "Warehouse cannot be empty" } }
-      }
+        validate: { notEmpty: { msg: "Warehouse cannot be empty" } },
+      },
     },
     {
       sequelize,
       paranoid: true,
-      modelName: "Inventory"
+      modelName: "Inventory",
     }
   );
 
