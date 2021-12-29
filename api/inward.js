@@ -49,7 +49,7 @@ router.get("/", async (req, res, next) => {
       {
         model: Product,
         as: "Products",
-        include: [{ model: UOM }],
+        include: [{ model: UOM }, { model: InwardGroup, include: ["InventoryDetails"] }],
         required: true,
       },
       {
@@ -161,26 +161,18 @@ router.get("/export", async (req, res, next) => {
         inward.referenceId || "",
         `${inward.User.firstName || ""} ${inward.User.lastName || ""}`,
         moment(inward.createdAt).tz(req.query.client_Tz).format("DD/MM/yy HH:mm"),
-        InwardGroup.InventoryDetail && InwardGroup.InventoryDetail.manufacturingDate ?
-          moment(InwardGroup.InventoryDetail.manufacturingDate).tz(req.query.client_Tz).format("DD/MM/yy HH:mm")
-          :
-          ''
-        ,
-        InwardGroup.InventoryDetail && InwardGroup.InventoryDetail.expiryDate ?
-          moment(InwardGroup.InventoryDetail.expiryDate).tz(req.query.client_Tz).format("DD/MM/yy HH:mm")
-          :
-          ''
-        ,
-        InwardGroup.InventoryDetail && InwardGroup.InventoryDetail.batchNumber ?
-          InwardGroup.InventoryDetail.batchNumber
-          :
-          ''
-        ,
-        InwardGroup.InventoryDetail && InwardGroup.InventoryDetail.batchName ?
-          InwardGroup.InventoryDetail.batchName
-          :
-          ''
-        ,
+        InwardGroup.InventoryDetail && InwardGroup.InventoryDetail.manufacturingDate
+          ? moment(InwardGroup.InventoryDetail.manufacturingDate).tz(req.query.client_Tz).format("DD/MM/yy HH:mm")
+          : "",
+        InwardGroup.InventoryDetail && InwardGroup.InventoryDetail.expiryDate
+          ? moment(InwardGroup.InventoryDetail.expiryDate).tz(req.query.client_Tz).format("DD/MM/yy HH:mm")
+          : "",
+        InwardGroup.InventoryDetail && InwardGroup.InventoryDetail.batchNumber
+          ? InwardGroup.InventoryDetail.batchNumber
+          : "",
+        InwardGroup.InventoryDetail && InwardGroup.InventoryDetail.batchName
+          ? InwardGroup.InventoryDetail.batchName
+          : "",
         inward.memo || "",
       ]);
     }
