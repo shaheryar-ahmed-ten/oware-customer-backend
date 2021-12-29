@@ -29,6 +29,10 @@ module.exports = (sequelize, DataTypes) => {
       ProductInward.belongsTo(models.Company, {
         foreignKey: "customerId"
       });
+      ProductInward.hasMany(models.InwardGroup, {
+        foreignKey: "inwardId",
+        as: "InwardGroup"
+      })
     }
   }
   ProductInward.init(

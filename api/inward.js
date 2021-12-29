@@ -49,13 +49,14 @@ router.get("/", async (req, res, next) => {
       {
         model: Product,
         as: "Products",
-        include: [{ model: UOM }, { model: InwardGroup, include: ["InventoryDetail"] }],
+        include: [{ model: UOM }],
         required: true,
       },
       {
         model: Warehouse,
         required: true,
       },
+      { model: InwardGroup, as: "InwardGroup", include: ["InventoryDetail"] }
     ],
     order: [["createdAt", "DESC"]],
     where,
