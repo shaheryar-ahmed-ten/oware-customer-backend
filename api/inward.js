@@ -141,6 +141,7 @@ router.get("/export", async (req, res, next) => {
       {
         model: User,
       },
+      { model: InwardGroup, as: "InwardGroup", include: ["InventoryDetail"] }
     ],
     order: [["createdAt", "DESC"]],
     where,
@@ -162,17 +163,17 @@ router.get("/export", async (req, res, next) => {
         inward.referenceId || "",
         `${inward.User.firstName || ""} ${inward.User.lastName || ""}`,
         moment(inward.createdAt).tz(req.query.client_Tz).format("DD/MM/yy HH:mm"),
-        InwardGroup.InventoryDetail && InwardGroup.InventoryDetail.manufacturingDate
-          ? moment(InwardGroup.InventoryDetail.manufacturingDate).tz(req.query.client_Tz).format("DD/MM/yy HH:mm")
+        Product.InwardGroup.inventoryDetailId && inward.InwardGroup.find((invGrp) => invGrp.productId === Product.InwardGroup.productId).InventoryDetail.manufacturingDate
+          ? moment(inward.InwardGroup.find((invGrp) => invGrp.productId === Product.InwardGroup.productId).InventoryDetail.manufacturingDate).tz(req.query.client_Tz).format("DD/MM/yy HH:mm")
           : "",
-        InwardGroup.InventoryDetail && InwardGroup.InventoryDetail.expiryDate
-          ? moment(InwardGroup.InventoryDetail.expiryDate).tz(req.query.client_Tz).format("DD/MM/yy HH:mm")
+        Product.InwardGroup.inventoryDetailId && inward.InwardGroup.find((invGrp) => invGrp.productId === Product.InwardGroup.productId).InventoryDetail.expiryDate
+          ? moment(inward.InwardGroup.find((invGrp) => invGrp.productId === Product.InwardGroup.productId).InventoryDetail.expiryDate).tz(req.query.client_Tz).format("DD/MM/yy HH:mm")
           : "",
-        InwardGroup.InventoryDetail && InwardGroup.InventoryDetail.batchNumber
-          ? InwardGroup.InventoryDetail.batchNumber
+        Product.InwardGroup.inventoryDetailId && inward.InwardGroup.find((invGrp) => invGrp.productId === Product.InwardGroup.productId).InventoryDetail.batchNumber
+          ? inward.InwardGroup.find((invGrp) => invGrp.productId === Product.InwardGroup.productId).InventoryDetail.batchNumber
           : "",
-        InwardGroup.InventoryDetail && InwardGroup.InventoryDetail.batchName
-          ? InwardGroup.InventoryDetail.batchName
+        Product.InwardGroup.inventoryDetailId && inward.InwardGroup.find((invGrp) => invGrp.productId === Product.InwardGroup.productId).InventoryDetail.batchName
+          ? inward.InwardGroup.find((invGrp) => invGrp.productId === Product.InwardGroup.productId).InventoryDetail.batchName
           : "",
         inward.memo || "",
       ]);
