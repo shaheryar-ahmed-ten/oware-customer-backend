@@ -18,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
   InventoryDetail.init(
     {
       InventoryId: DataTypes.INTEGER,
-      internalIdForBusiness: DataTypes.INTEGER,
+      batchName: DataTypes.INTEGER,
       manufacturingDate: DataTypes.DATE,
       expiryDate: DataTypes.DATE,
       batchNumber: DataTypes.STRING,
