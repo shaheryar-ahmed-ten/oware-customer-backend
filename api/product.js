@@ -64,7 +64,6 @@ router.get("/", async (req, res, next) => {
         required: true,
       },
       { model: Warehouse, attributes: ["name"], required: true },
-      { model: InventoryDetail, as: "InventoryDetail" },
     ],
     attributes: [
       ["productId", "id"],
@@ -109,7 +108,6 @@ router.get("/batches/:inventoryId", async (req, res, next) => {
   try {
     const batches = await InventoryDetail.findAll({
       where: { inventoryId: req.params.inventoryId },
-      logging: console.log,
     });
     res.json({
       success: true,
