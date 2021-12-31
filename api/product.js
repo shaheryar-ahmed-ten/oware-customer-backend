@@ -106,8 +106,6 @@ router.get("/", async (req, res, next) => {
 
 router.get("/batches/:productId", async (req, res, next) => {
   try {
-    console.log("req.compamyId", req.companyId);
-
     const inventories = await Inventory.findAll({
       where: { productId: req.params.productId, customerId: req.companyId },
     });
