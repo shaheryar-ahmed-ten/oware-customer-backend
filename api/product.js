@@ -55,7 +55,7 @@ router.get("/", async (req, res, next) => {
     include: [
       {
         model: Product,
-        attributes: ["name"],
+        attributes: ["name", "batchEnabled"],
         include: [
           { model: Category, attributes: ["name"] },
           { model: Brand, attributes: ["name"] },
