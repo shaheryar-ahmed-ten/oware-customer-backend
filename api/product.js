@@ -208,6 +208,7 @@ router.get("/export", async (req, res, next) => {
           { model: Category, attributes: ["name"], required: true },
           { model: Brand, attributes: ["name"] },
           { model: UOM, attributes: ["name"] },
+          { model: InventoryDetail, as: "InventoryDetail" },
         ],
         required: true,
       },
@@ -230,6 +231,31 @@ router.get("/export", async (req, res, next) => {
       row.dispatchedQuantity,
     ])
   );
+
+  worksheet = workbook.addWorksheet("Batch Details");
+
+  worksheet.columns = getColumnsConfig([
+    "PRODUCT NAME",
+    "QUANTITY",
+    "BATCH NUMBER",
+    "BATCH NAME",
+    "MANUFACTURING DATE",
+    "EXPIRY DATE",
+  ]);
+  response.map((row) => {
+    row.Product.batchEnabled
+      ? worksheet.addRows(
+          row.InventoryDetail.map((invDetail) => [
+            row.Product.name,
+            invDetail.inwardQuantity,
+            invDetail.batchNumber,
+            invDetail.batchName,
+            moment(invDetail.manufacturingDate).tz(req.query.client_Tz).format("DD/MM/yy"),
+            moment(invDetail.expiryDate).tz(req.query.client_Tz).format("DD/MM/yy"),
+          ])
+        )
+      : "";
+  });
 
   res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
   res.setHeader("Content-Disposition", "attachment; filename=" + "Inventory.xlsx");
