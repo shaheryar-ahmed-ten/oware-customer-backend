@@ -110,13 +110,14 @@ router.get("/batches/:productId", async (req, res, next) => {
       where: { productId: req.params.productId, customerId: req.companyId },
     });
 
-    const batches = [];
+    let batches = [];
+
     for (const inv of inventories) {
       let newbatch = await InventoryDetail.findAll({
         where: { inventoryId: inv.id },
       });
 
-      batches.push(newbatch);
+      batches = batches.concat(newbatch);
     }
 
     res.json({
