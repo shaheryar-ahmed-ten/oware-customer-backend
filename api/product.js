@@ -104,17 +104,30 @@ router.get("/", async (req, res, next) => {
   });
 });
 
-router.get("/batches/:inventoryId", async (req, res, next) => {
+router.get("/batches/:productId", async (req, res, next) => {
   try {
-    const batches = await InventoryDetail.findAll({
-      where: { inventoryId: req.params.inventoryId },
+    console.log("req.compamyId", req.companyId);
+
+    const inventories = await Inventory.findAll({
+      where: { productId: req.params.productId, customerId: req.companyId },
     });
+
+    const batches = [];
+    for (const inv of inventories) {
+      let newbatch = await InventoryDetail.findAll({
+        where: { inventoryId: inv.id },
+      });
+
+      batches.push(newbatch);
+    }
+
     res.json({
       success: true,
       message: "respond with a resource",
       batches,
     });
   } catch (err) {
+    console.error("err", err);
     res.json({
       success: false,
       message: err.message,
@@ -132,8 +145,8 @@ router.get("/relations", async (req, res, next) => {
   };
   const relations = {
     products: await sequelize.query(
-      `select distinct productId as id, product.name as name 
-        from Inventories join Products as product on product.id = Inventories.productId 
+      `select distinct productId as id, product.name as name
+        from Inventories join Products as product on product.id = Inventories.productId
         where customerId = ${req.companyId} and availableQuantity != 0;`,
       { type: Sequelize.QueryTypes.SELECT }
     ),
