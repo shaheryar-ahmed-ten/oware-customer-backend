@@ -80,7 +80,6 @@ router.get("/", async (req, res, next) => {
             model: InwardGroup,
             as: "InwardGroup",
             through: InwardGroupBatch,
-            attributes: [],
           },
         ],
         where: { "$InwardGroup.id$": { [Op.eq]: product.InwardGroup.id } },
