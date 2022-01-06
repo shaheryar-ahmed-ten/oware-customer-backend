@@ -11,6 +11,8 @@ const {
   sequelize,
   InwardGroup,
   User,
+  InventoryDetail,
+  InwardGroupBatch,
   Company,
   DispatchOrder,
   ProductOutward,
@@ -31,7 +33,11 @@ router.get("/", async (req, res, next) => {
   };
   where = attachDateFilter(req.query, where, "createdAt");
   if (req.query.search)
-    where[Op.or] = ["internalIdForBusiness", "$Warehouse.name$", "referenceId"].map((key) => ({
+    where[Op.or] = [
+      "internalIdForBusiness",
+      "$Warehouse.name$",
+      "referenceId",
+    ].map((key) => ({
       [key]: { [Op.like]: "%" + req.query.search + "%" },
     }));
   if ("warehouse" in req.query) {
@@ -56,7 +62,7 @@ router.get("/", async (req, res, next) => {
         model: Warehouse,
         required: true,
       },
-      { model: InwardGroup, as: "InwardGroup", include: ["InventoryDetail"] }
+      { model: InwardGroup, as: "InwardGroup", include: ["InventoryDetail"] },
     ],
     order: [["createdAt", "DESC"]],
     where,
@@ -64,6 +70,26 @@ router.get("/", async (req, res, next) => {
     limit,
     distinct: true,
   });
+
+  for (const inward of response.rows) {
+    for (const product of inward.Products) {
+      console.log("product.InwardGroup.id", product.InwardGroup.id);
+      const detail = await InventoryDetail.findAll({
+        include: [
+          {
+            model: InwardGroup,
+            as: "InwardGroup",
+            through: InwardGroupBatch,
+            attributes: [],
+          },
+        ],
+        where: { "$InwardGroup.id$": { [Op.eq]: product.InwardGroup.id } },
+      });
+      console.log("detail", detail);
+      product.InwardGroup.dataValues.InventoryDetail = detail;
+    }
+  }
+
   res.json({
     success: true,
     message: "respond with a resource",
@@ -83,7 +109,11 @@ router.get("/export", async (req, res, next) => {
   worksheet = workbook.addWorksheet("Product Inwards");
 
   const getColumnsConfig = (columns) =>
-    columns.map((column) => ({ header: column, width: Math.ceil(column.length * 1.5), outlineLevel: 1 }));
+    columns.map((column) => ({
+      header: column,
+      width: Math.ceil(column.length * 1.5),
+      outlineLevel: 1,
+    }));
 
   worksheet.columns = getColumnsConfig([
     "INWARD ID",
@@ -106,7 +136,11 @@ router.get("/export", async (req, res, next) => {
   ]);
 
   if (req.query.search)
-    where[Op.or] = ["internalIdForBusiness", "$Warehouse.name$", "referenceId"].map((key) => ({
+    where[Op.or] = [
+      "internalIdForBusiness",
+      "$Warehouse.name$",
+      "referenceId",
+    ].map((key) => ({
       [key]: { [Op.like]: "%" + req.query.search + "%" },
     }));
   if ("warehouse" in req.query) {
@@ -141,7 +175,7 @@ router.get("/export", async (req, res, next) => {
       {
         model: User,
       },
-      { model: InwardGroup, as: "InwardGroup", include: ["InventoryDetail"] }
+      { model: InwardGroup, as: "InwardGroup", include: ["InventoryDetail"] },
     ],
     order: [["createdAt", "DESC"]],
     where,
@@ -162,18 +196,48 @@ router.get("/export", async (req, res, next) => {
         inward.driverName || "",
         inward.referenceId || "",
         `${inward.User.firstName || ""} ${inward.User.lastName || ""}`,
-        moment(inward.createdAt).tz(req.query.client_Tz).format("DD/MM/yy HH:mm"),
-        Product.InwardGroup.inventoryDetailId && inward.InwardGroup.find((invGrp) => invGrp.productId === Product.InwardGroup.productId).InventoryDetail.manufacturingDate
-          ? moment(inward.InwardGroup.find((invGrp) => invGrp.productId === Product.InwardGroup.productId).InventoryDetail.manufacturingDate).tz(req.query.client_Tz).format("DD/MM/yy HH:mm")
+        moment(inward.createdAt)
+          .tz(req.query.client_Tz)
+          .format("DD/MM/yy HH:mm"),
+        Product.InwardGroup.inventoryDetailId &&
+        inward.InwardGroup.find(
+          (invGrp) => invGrp.productId === Product.InwardGroup.productId
+        ).InventoryDetail.manufacturingDate
+          ? moment(
+              inward.InwardGroup.find(
+                (invGrp) => invGrp.productId === Product.InwardGroup.productId
+              ).InventoryDetail.manufacturingDate
+            )
+              .tz(req.query.client_Tz)
+              .format("DD/MM/yy HH:mm")
           : "",
-        Product.InwardGroup.inventoryDetailId && inward.InwardGroup.find((invGrp) => invGrp.productId === Product.InwardGroup.productId).InventoryDetail.expiryDate
-          ? moment(inward.InwardGroup.find((invGrp) => invGrp.productId === Product.InwardGroup.productId).InventoryDetail.expiryDate).tz(req.query.client_Tz).format("DD/MM/yy HH:mm")
+        Product.InwardGroup.inventoryDetailId &&
+        inward.InwardGroup.find(
+          (invGrp) => invGrp.productId === Product.InwardGroup.productId
+        ).InventoryDetail.expiryDate
+          ? moment(
+              inward.InwardGroup.find(
+                (invGrp) => invGrp.productId === Product.InwardGroup.productId
+              ).InventoryDetail.expiryDate
+            )
+              .tz(req.query.client_Tz)
+              .format("DD/MM/yy HH:mm")
           : "",
-        Product.InwardGroup.inventoryDetailId && inward.InwardGroup.find((invGrp) => invGrp.productId === Product.InwardGroup.productId).InventoryDetail.batchNumber
-          ? inward.InwardGroup.find((invGrp) => invGrp.productId === Product.InwardGroup.productId).InventoryDetail.batchNumber
+        Product.InwardGroup.inventoryDetailId &&
+        inward.InwardGroup.find(
+          (invGrp) => invGrp.productId === Product.InwardGroup.productId
+        ).InventoryDetail.batchNumber
+          ? inward.InwardGroup.find(
+              (invGrp) => invGrp.productId === Product.InwardGroup.productId
+            ).InventoryDetail.batchNumber
           : "",
-        Product.InwardGroup.inventoryDetailId && inward.InwardGroup.find((invGrp) => invGrp.productId === Product.InwardGroup.productId).InventoryDetail.batchName
-          ? inward.InwardGroup.find((invGrp) => invGrp.productId === Product.InwardGroup.productId).InventoryDetail.batchName
+        Product.InwardGroup.inventoryDetailId &&
+        inward.InwardGroup.find(
+          (invGrp) => invGrp.productId === Product.InwardGroup.productId
+        ).InventoryDetail.batchName
+          ? inward.InwardGroup.find(
+              (invGrp) => invGrp.productId === Product.InwardGroup.productId
+            ).InventoryDetail.batchName
           : "",
         inward.memo || "",
       ]);
@@ -182,8 +246,14 @@ router.get("/export", async (req, res, next) => {
 
   worksheet.addRows(inwardArray);
 
-  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-  res.setHeader("Content-Disposition", "attachment; filename=" + "Inventory.xlsx");
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+  res.setHeader(
+    "Content-Disposition",
+    "attachment; filename=" + "Inventory.xlsx"
+  );
 
   await workbook.xlsx.write(res).then(() => res.end());
 });
@@ -222,7 +292,9 @@ router.post("/", async (req, res, next) => {
     let productInward;
     let message = "New productInward registered";
     // Hack for backward compatibility
-    req.body.products = req.body.products || [{ id: req.body.productId, quantity: req.body.quantity }];
+    req.body.products = req.body.products || [
+      { id: req.body.productId, quantity: req.body.quantity },
+    ];
 
     const { companyId } = await User.findOne({ where: { id: req.userId } });
     req.body["customerId"] = companyId;
@@ -236,7 +308,8 @@ router.post("/", async (req, res, next) => {
       );
 
       const numberOfinternalIdForBusiness = digitize(productInward.id, 6);
-      productInward.internalIdForBusiness = req.body.internalIdForBusiness + numberOfinternalIdForBusiness;
+      productInward.internalIdForBusiness =
+        req.body.internalIdForBusiness + numberOfinternalIdForBusiness;
       await productInward.save({ transaction });
 
       await InwardGroup.bulkCreate(
