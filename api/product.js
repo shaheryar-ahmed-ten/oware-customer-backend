@@ -32,7 +32,11 @@ router.get("/", async (req, res, next) => {
   //     }))
   //   );
   if (req.query.search)
-    where[Op.or] = ["$Warehouse.name$", "$Product.name$", "$Product.Category.name$"].map((key) => ({
+    where[Op.or] = [
+      "$Warehouse.name$",
+      "$Product.name$",
+      "$Product.Category.name$",
+    ].map((key) => ({
       [key]: { [Op.like]: "%" + req.query.search + "%" },
     }));
 
@@ -67,9 +71,18 @@ router.get("/", async (req, res, next) => {
     ],
     attributes: [
       ["productId", "id"],
-      [Sequelize.fn("sum", Sequelize.col("committedQuantity")), "committedQuantity"],
-      [Sequelize.fn("sum", Sequelize.col("availableQuantity")), "availableQuantity"],
-      [Sequelize.fn("sum", Sequelize.col("dispatchedQuantity")), "dispatchedQuantity"],
+      [
+        Sequelize.fn("sum", Sequelize.col("committedQuantity")),
+        "committedQuantity",
+      ],
+      [
+        Sequelize.fn("sum", Sequelize.col("availableQuantity")),
+        "availableQuantity",
+      ],
+      [
+        Sequelize.fn("sum", Sequelize.col("dispatchedQuantity")),
+        "dispatchedQuantity",
+      ],
     ],
     where,
     offset,
@@ -168,7 +181,11 @@ router.get("/export", async (req, res, next) => {
   worksheet = workbook.addWorksheet("Products");
 
   const getColumnsConfig = (columns) =>
-    columns.map((column) => ({ header: column, width: Math.ceil(column.length * 1.5), outlineLevel: 1 }));
+    columns.map((column) => ({
+      header: column,
+      width: Math.ceil(column.length * 1.5),
+      outlineLevel: 1,
+    }));
 
   worksheet.columns = getColumnsConfig([
     "PRODUCT NAME",
@@ -182,7 +199,11 @@ router.get("/export", async (req, res, next) => {
   ]);
 
   if (req.query.search)
-    where[Op.or] = ["$Warehouse.name$", "$Product.name$", "$Product.Category.name$"].map((key) => ({
+    where[Op.or] = [
+      "$Warehouse.name$",
+      "$Product.name$",
+      "$Product.Category.name$",
+    ].map((key) => ({
       [key]: { [Op.like]: "%" + req.query.search + "%" },
     }));
   if (req.query.days) {
@@ -250,15 +271,25 @@ router.get("/export", async (req, res, next) => {
             invDetail.inwardQuantity,
             invDetail.batchNumber,
             invDetail.batchName,
-            moment(invDetail.manufacturingDate).tz(req.query.client_Tz).format("DD/MM/yy"),
-            moment(invDetail.expiryDate).tz(req.query.client_Tz).format("DD/MM/yy"),
+            moment(invDetail.manufacturingDate)
+              .tz(req.query.client_Tz)
+              .format("DD/MM/yy"),
+            moment(invDetail.expiryDate)
+              .tz(req.query.client_Tz)
+              .format("DD/MM/yy"),
           ])
         )
       : "";
   });
 
-  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-  res.setHeader("Content-Disposition", "attachment; filename=" + "Inventory.xlsx");
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+  res.setHeader(
+    "Content-Disposition",
+    "attachment; filename=" + "Inventory.xlsx"
+  );
 
   await workbook.xlsx.write(res).then(() => res.end());
 });
@@ -271,7 +302,11 @@ router.get("/:id", async (req, res, next) => {
     productId: req.params.id,
   };
   const response = await Inventory.findAndCountAll({
-    attributes: ["availableQuantity", "committedQuantity", "dispatchedQuantity"],
+    attributes: [
+      "availableQuantity",
+      "committedQuantity",
+      "dispatchedQuantity",
+    ],
     include: [
       {
         model: Product,
