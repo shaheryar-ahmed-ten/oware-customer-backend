@@ -127,10 +127,10 @@ router.get("/export", async (req, res, next) => {
     "REFERENCE ID",
     "CREATOR",
     "INWARD DATE",
-    "MANUFACTURING DATE",
-    "EXPIRY DATE",
-    "BATCH NUMBER",
-    "BATCH NAME",
+    // "MANUFACTURING DATE",
+    // "EXPIRY DATE",
+    // "BATCH NUMBER",
+    // "BATCH NAME",
     "MEMO",
   ]);
 
@@ -198,46 +198,46 @@ router.get("/export", async (req, res, next) => {
         moment(inward.createdAt)
           .tz(req.query.client_Tz)
           .format("DD/MM/yy HH:mm"),
-        Product.InwardGroup.inventoryDetailId &&
-        inward.InwardGroup.find(
-          (invGrp) => invGrp.productId === Product.InwardGroup.productId
-        ).InventoryDetail.manufacturingDate
-          ? moment(
-              inward.InwardGroup.find(
-                (invGrp) => invGrp.productId === Product.InwardGroup.productId
-              ).InventoryDetail.manufacturingDate
-            )
-              .tz(req.query.client_Tz)
-              .format("DD/MM/yy HH:mm")
-          : "",
-        Product.InwardGroup.inventoryDetailId &&
-        inward.InwardGroup.find(
-          (invGrp) => invGrp.productId === Product.InwardGroup.productId
-        ).InventoryDetail.expiryDate
-          ? moment(
-              inward.InwardGroup.find(
-                (invGrp) => invGrp.productId === Product.InwardGroup.productId
-              ).InventoryDetail.expiryDate
-            )
-              .tz(req.query.client_Tz)
-              .format("DD/MM/yy HH:mm")
-          : "",
-        Product.InwardGroup.inventoryDetailId &&
-        inward.InwardGroup.find(
-          (invGrp) => invGrp.productId === Product.InwardGroup.productId
-        ).InventoryDetail.batchNumber
-          ? inward.InwardGroup.find(
-              (invGrp) => invGrp.productId === Product.InwardGroup.productId
-            ).InventoryDetail.batchNumber
-          : "",
-        Product.InwardGroup.inventoryDetailId &&
-        inward.InwardGroup.find(
-          (invGrp) => invGrp.productId === Product.InwardGroup.productId
-        ).InventoryDetail.batchName
-          ? inward.InwardGroup.find(
-              (invGrp) => invGrp.productId === Product.InwardGroup.productId
-            ).InventoryDetail.batchName
-          : "",
+        // Product.InwardGroup.inventoryDetailId &&
+        // inward.InwardGroup.find(
+        //   (invGrp) => invGrp.productId === Product.InwardGroup.productId
+        // ).InventoryDetail.manufacturingDate
+        //   ? moment(
+        //       inward.InwardGroup.find(
+        //         (invGrp) => invGrp.productId === Product.InwardGroup.productId
+        //       ).InventoryDetail.manufacturingDate
+        //     )
+        //       .tz(req.query.client_Tz)
+        //       .format("DD/MM/yy HH:mm")
+        //   : "",
+        // Product.InwardGroup.inventoryDetailId &&
+        // inward.InwardGroup.find(
+        //   (invGrp) => invGrp.productId === Product.InwardGroup.productId
+        // ).InventoryDetail.expiryDate
+        //   ? moment(
+        //       inward.InwardGroup.find(
+        //         (invGrp) => invGrp.productId === Product.InwardGroup.productId
+        //       ).InventoryDetail.expiryDate
+        //     )
+        //       .tz(req.query.client_Tz)
+        //       .format("DD/MM/yy HH:mm")
+        //   : "",
+        // Product.InwardGroup.inventoryDetailId &&
+        // inward.InwardGroup.find(
+        //   (invGrp) => invGrp.productId === Product.InwardGroup.productId
+        // ).InventoryDetail.batchNumber
+        //   ? inward.InwardGroup.find(
+        //       (invGrp) => invGrp.productId === Product.InwardGroup.productId
+        //     ).InventoryDetail.batchNumber
+        //   : "",
+        // Product.InwardGroup.inventoryDetailId &&
+        // inward.InwardGroup.find(
+        //   (invGrp) => invGrp.productId === Product.InwardGroup.productId
+        // ).InventoryDetail.batchName
+        //   ? inward.InwardGroup.find(
+        //       (invGrp) => invGrp.productId === Product.InwardGroup.productId
+        //     ).InventoryDetail.batchName
+        //   : "",
         inward.memo || "",
       ]);
     }
