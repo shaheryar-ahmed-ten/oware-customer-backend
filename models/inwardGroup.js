@@ -30,41 +30,46 @@ module.exports = (sequelize, DataTypes) => {
   InwardGroup.init(
     {
       id: {
+        autoIncrement: true,
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: { notEmpty: true },
         primaryKey: true,
       },
-
       userId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: { notEmpty: true },
       },
-
       quantity: {
         type: DataTypes.INTEGER,
         validate: {
           isInt: { msg: "Please enter quantity" },
         },
       },
-
       productId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: { notEmpty: { msg: "Product cannot be empty" } },
       },
-
       inwardId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: { notEmpty: { msg: "Inward cannot be empty" } },
+      },
+      inventoryDetailId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
       },
     },
     {
       sequelize,
       paranoid: true,
       modelName: "InwardGroup",
+      sync: true,
+      defaultScope: {
+        include: "InventoryDetail",
+      },
     }
   );
 

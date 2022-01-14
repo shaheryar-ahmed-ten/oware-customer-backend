@@ -18,6 +18,11 @@ module.exports = (sequelize, DataTypes) => {
         as: "InwardGroup",
         foreignKey: "inventoryDetailId",
       });
+      InventoryDetail.belongsToMany(models.OutwardGroup, {
+        through: models.OutwardGroupBatch,
+        as: "OutwardGroup",
+        foreignKey: "inventoryDetailId",
+      });
     }
   }
   InventoryDetail.init(

@@ -23,6 +23,7 @@ const { Op, Sequelize } = require("sequelize");
 const authService = require("../services/auth.service");
 const { digitize, attachDateFilter } = require("../services/common.services");
 const ExcelJS = require("exceljs");
+const { CloudWatchLogs } = require("aws-sdk");
 
 /* GET productInwards listing. */
 router.get("/", async (req, res, next) => {
@@ -73,7 +74,6 @@ router.get("/", async (req, res, next) => {
 
   for (const inward of response.rows) {
     for (const product of inward.Products) {
-      console.log("product.InwardGroup.id", product.InwardGroup.id);
       const detail = await InventoryDetail.findAll({
         include: [
           {
@@ -84,7 +84,6 @@ router.get("/", async (req, res, next) => {
         ],
         where: { "$InwardGroup.id$": { [Op.eq]: product.InwardGroup.id } },
       });
-      console.log("detail", detail);
       product.InwardGroup.dataValues.InventoryDetail = detail;
     }
   }
@@ -119,7 +118,7 @@ router.get("/export", async (req, res, next) => {
     "PRODUCT",
     "WAREHOUSE",
     "UOM",
-    "QUANTITY",
+    "INWARD QUANTITY",
     "VEHICLE TYPE",
     "VEHICLE NUMBER",
     "VEHICLE NAME",
@@ -127,11 +126,12 @@ router.get("/export", async (req, res, next) => {
     "REFERENCE ID",
     "CREATOR",
     "INWARD DATE",
-    // "MANUFACTURING DATE",
-    // "EXPIRY DATE",
-    // "BATCH NUMBER",
-    // "BATCH NAME",
     "MEMO",
+    "BATCH NUMBER",
+    "BATCH QUANTITY",
+    "MANUFACTURING DATE",
+    "EXPIRY DATE",
+    // "BATCH NAME",
   ]);
 
   if (req.query.search)
@@ -164,15 +164,18 @@ router.get("/export", async (req, res, next) => {
       {
         model: Product,
         as: "Products",
-        include: [{ model: UOM }],
+        attributes: ["name"],
+        include: [{ model: UOM, attributes: ["name"] }],
         required: true,
       },
       {
         model: Warehouse,
         required: true,
+        attributes: ["name"],
       },
       {
         model: User,
+        attributes: ["firstName", "lastName"],
       },
       { model: InwardGroup, as: "InwardGroup", include: ["InventoryDetail"] },
     ],
@@ -183,63 +186,47 @@ router.get("/export", async (req, res, next) => {
   const inwardArray = [];
   for (const inward of response.rows) {
     for (const Product of inward.Products) {
-      inwardArray.push([
-        inward.internalIdForBusiness || "",
-        Product.name,
-        inward.Warehouse.name,
-        Product.UOM.name,
-        Product.InwardGroup.quantity,
-        inward.vehicleType || "",
-        inward.vehicleNumber || "",
-        inward.vehicleName || "",
-        inward.driverName || "",
-        inward.referenceId || "",
-        `${inward.User.firstName || ""} ${inward.User.lastName || ""}`,
-        moment(inward.createdAt)
-          .tz(req.query.client_Tz)
-          .format("DD/MM/yy HH:mm"),
-        // Product.InwardGroup.inventoryDetailId &&
-        // inward.InwardGroup.find(
-        //   (invGrp) => invGrp.productId === Product.InwardGroup.productId
-        // ).InventoryDetail.manufacturingDate
-        //   ? moment(
-        //       inward.InwardGroup.find(
-        //         (invGrp) => invGrp.productId === Product.InwardGroup.productId
-        //       ).InventoryDetail.manufacturingDate
-        //     )
-        //       .tz(req.query.client_Tz)
-        //       .format("DD/MM/yy HH:mm")
-        //   : "",
-        // Product.InwardGroup.inventoryDetailId &&
-        // inward.InwardGroup.find(
-        //   (invGrp) => invGrp.productId === Product.InwardGroup.productId
-        // ).InventoryDetail.expiryDate
-        //   ? moment(
-        //       inward.InwardGroup.find(
-        //         (invGrp) => invGrp.productId === Product.InwardGroup.productId
-        //       ).InventoryDetail.expiryDate
-        //     )
-        //       .tz(req.query.client_Tz)
-        //       .format("DD/MM/yy HH:mm")
-        //   : "",
-        // Product.InwardGroup.inventoryDetailId &&
-        // inward.InwardGroup.find(
-        //   (invGrp) => invGrp.productId === Product.InwardGroup.productId
-        // ).InventoryDetail.batchNumber
-        //   ? inward.InwardGroup.find(
-        //       (invGrp) => invGrp.productId === Product.InwardGroup.productId
-        //     ).InventoryDetail.batchNumber
-        //   : "",
-        // Product.InwardGroup.inventoryDetailId &&
-        // inward.InwardGroup.find(
-        //   (invGrp) => invGrp.productId === Product.InwardGroup.productId
-        // ).InventoryDetail.batchName
-        //   ? inward.InwardGroup.find(
-        //       (invGrp) => invGrp.productId === Product.InwardGroup.productId
-        //     ).InventoryDetail.batchName
-        //   : "",
-        inward.memo || "",
-      ]);
+      const detail = await InventoryDetail.findAll({
+        include: [
+          {
+            model: InwardGroup,
+            as: "InwardGroup",
+            through: InwardGroupBatch,
+          },
+        ],
+        attributes: [
+          "expiryDate",
+          "manufacturingDate",
+          "batchNumber",
+          "availableQuantity",
+        ],
+        where: { "$InwardGroup.id$": { [Op.eq]: Product.InwardGroup.id } },
+      });
+      Product.InwardGroup.dataValues.InventoryDetail = detail;
+      for (const batch of Product.InwardGroup.dataValues.InventoryDetail) {
+        // console.log("batch", batch);
+        inwardArray.push([
+          inward.internalIdForBusiness || "",
+          Product.name,
+          inward.Warehouse.name,
+          Product.UOM.name,
+          Product.InwardGroup.quantity,
+          inward.vehicleType || "",
+          inward.vehicleNumber || "",
+          inward.vehicleName || "",
+          inward.driverName || "",
+          inward.referenceId || "",
+          `${inward.User.firstName || ""} ${inward.User.lastName || ""}`,
+          moment(inward.createdAt)
+            .tz(req.query.client_Tz)
+            .format("DD/MM/yy HH:mm"),
+          inward.memo || "",
+          batch.batchNumber || "",
+          batch.availableQuantity || "",
+          batch.manufacturingDate || "",
+          batch.expiryDate || "",
+        ]);
+      }
     }
   }
 
