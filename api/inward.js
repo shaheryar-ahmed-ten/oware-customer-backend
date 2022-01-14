@@ -161,13 +161,13 @@ router.get("/export", async (req, res, next) => {
   }
   const response = await ProductInward.findAndCountAll({
     include: [
-      {
-        model: Product,
-        as: "Products",
-        attributes: ["name"],
-        include: [{ model: UOM, attributes: ["name"] }],
-        required: true,
-      },
+      // {
+      //   model: Product,
+      //   as: "Products",
+      //   attributes: ["name"],
+      //   include: [{ model: UOM, attributes: ["name"] }],
+      //   required: true,
+      // },
       {
         model: Warehouse,
         required: true,
@@ -177,57 +177,93 @@ router.get("/export", async (req, res, next) => {
         model: User,
         attributes: ["firstName", "lastName"],
       },
-      { model: InwardGroup, as: "InwardGroup", include: ["InventoryDetail"] },
+      {
+        model: InwardGroup,
+        as: "InwardGroup",
+        include: ["InventoryDetail", "Product"],
+      },
     ],
     order: [["createdAt", "DESC"]],
     where,
   });
 
   const inwardArray = [];
-  for (const inward of response.rows) {
-    for (const Product of inward.Products) {
-      const detail = await InventoryDetail.findAll({
-        include: [
-          {
-            model: InwardGroup,
-            as: "InwardGroup",
-            through: InwardGroupBatch,
-          },
-        ],
-        attributes: [
-          "expiryDate",
-          "manufacturingDate",
-          "batchNumber",
-          "availableQuantity",
-        ],
-        where: { "$InwardGroup.id$": { [Op.eq]: Product.InwardGroup.id } },
-      });
-      Product.InwardGroup.dataValues.InventoryDetail = detail;
-      for (const batch of Product.InwardGroup.dataValues.InventoryDetail) {
-        // console.log("batch", batch);
-        inwardArray.push([
-          inward.internalIdForBusiness || "",
-          Product.name,
-          inward.Warehouse.name,
-          Product.UOM.name,
-          Product.InwardGroup.quantity,
-          inward.vehicleType || "",
-          inward.vehicleNumber || "",
-          inward.vehicleName || "",
-          inward.driverName || "",
-          inward.referenceId || "",
-          `${inward.User.firstName || ""} ${inward.User.lastName || ""}`,
-          moment(inward.createdAt)
-            .tz(req.query.client_Tz)
-            .format("DD/MM/yy HH:mm"),
-          inward.memo || "",
-          batch.batchNumber || "",
-          batch.availableQuantity || "",
-          batch.manufacturingDate || "",
-          batch.expiryDate || "",
-        ]);
+
+  await Promise.all(
+    response.rows.map(async (inward) => {
+      for (const IG of inward.InwardGroup) {
+        for (const batch of IG.InventoryDetail) {
+          inwardArray.push([
+            inward.internalIdForBusiness || "",
+            IG.Product.name,
+            inward.Warehouse.name,
+            IG.Product.UOM.name,
+            IG.Product.InwardGroup.quantity,
+            inward.vehicleType || "",
+            inward.vehicleNumber || "",
+            inward.vehicleName || "",
+            inward.driverName || "",
+            inward.referenceId || "",
+            `${inward.User.firstName || ""} ${inward.User.lastName || ""}`,
+            moment(inward.createdAt)
+              .tz(req.query.client_Tz)
+              .format("DD/MM/yy HH:mm"),
+            inward.memo || "",
+            batch.batchNumber || "",
+            batch.availableQuantity || "",
+            batch.manufacturingDate || "",
+            batch.expiryDate || "",
+          ]);
+        }
       }
-    }
+      // for (const Product of inward.Products) {
+      //   const detail = await InventoryDetail.findAll({
+      //     include: [
+      //       {
+      //         model: InwardGroup,
+      //         as: "InwardGroup",
+      //         through: InwardGroupBatch,
+      //         attributes: [],
+      //       },
+      //     ],
+      //     attributes: [
+      //       "expiryDate",
+      //       "manufacturingDate",
+      //       "batchNumber",
+      //       "availableQuantity",
+      //     ],
+      //     where: { "$InwardGroup.id$": { [Op.eq]: Product.InwardGroup.id } },
+      //   });
+      //   Product.InwardGroup.dataValues.InventoryDetail = detail;
+      //   for (const batch of Product.InwardGroup.dataValues.InventoryDetail) {
+      //     // console.log("batch", batch);
+      //     inwardArray.push([
+      //       inward.internalIdForBusiness || "",
+      //       Product.name,
+      //       inward.Warehouse.name,
+      //       Product.UOM.name,
+      //       Product.InwardGroup.quantity,
+      //       inward.vehicleType || "",
+      //       inward.vehicleNumber || "",
+      //       inward.vehicleName || "",
+      //       inward.driverName || "",
+      //       inward.referenceId || "",
+      //       `${inward.User.firstName || ""} ${inward.User.lastName || ""}`,
+      //       moment(inward.createdAt)
+      //         .tz(req.query.client_Tz)
+      //         .format("DD/MM/yy HH:mm"),
+      //       inward.memo || "",
+      //       batch.batchNumber || "",
+      //       batch.availableQuantity || "",
+      //       batch.manufacturingDate || "",
+      //       batch.expiryDate || "",
+      //     ]);
+      //   }
+      // }
+    })
+  );
+
+  for (const inward of response.rows) {
   }
 
   worksheet.addRows(inwardArray);
