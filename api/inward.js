@@ -120,8 +120,8 @@ router.get("/export", async (req, res, next) => {
     "UOM",
     "INWARD QUANTITY",
     "VEHICLE TYPE",
-    "VEHICLE NUMBER",
     "VEHICLE NAME",
+    "VEHICLE NUMBER",
     "DRIVER NAME",
     "REFERENCE ID",
     "CREATOR",
@@ -159,7 +159,7 @@ router.get("/export", async (req, res, next) => {
     });
     where["createdAt"] = { [Op.between]: [startDate, endDate] };
   }
-  const response = await ProductInward.findAndCountAll({
+  response = await ProductInward.findAll({
     include: [
       // {
       //   model: Product,

@@ -2,7 +2,7 @@
 const { Model } = require("sequelize");
 const bcrypt = require("bcrypt");
 const {
-  DISPATCH_ORDER: { STATUS }
+  DISPATCH_ORDER: { STATUS },
 } = require("../enums");
 module.exports = (sequelize, DataTypes) => {
   class DispatchOrder extends Model {
@@ -14,19 +14,20 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       DispatchOrder.belongsTo(models.User, {
-        foreignKey: "userId"
+        foreignKey: "userId",
       });
       DispatchOrder.hasMany(models.ProductOutward, {
-        foreignKey: "dispatchOrderId"
+        foreignKey: "dispatchOrderId",
+        as: "ProductOutward",
       });
       DispatchOrder.belongsTo(models.Inventory, {
         foreignKey: "inventoryId",
-        as: "Inventory"
+        as: "Inventory",
       });
       DispatchOrder.belongsToMany(models.Inventory, {
         through: models.OrderGroup,
         foreignKey: "orderId",
-        as: "Inventories"
+        as: "Inventories",
       });
     }
   }
@@ -35,60 +36,60 @@ module.exports = (sequelize, DataTypes) => {
       userId: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        validate: { notEmpty: true }
+        validate: { notEmpty: true },
       },
       quantity: {
         type: DataTypes.INTEGER,
         validate: {
-          isInt: { msg: "Please enter quantity" }
-        }
+          isInt: { msg: "Please enter quantity" },
+        },
       },
       internalIdForBusiness: {
         type: DataTypes.STRING(30),
-        allowNull: true
+        allowNull: true,
       },
       referenceId: {
         type: DataTypes.STRING(30),
-        allowNull: true
+        allowNull: true,
       },
       receiverName: {
         type: DataTypes.STRING,
         allowNull: false,
-        validate: { notEmpty: { msg: "Please enter receiver name" } }
+        validate: { notEmpty: { msg: "Please enter receiver name" } },
       },
       receiverPhone: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
           notEmpty: { msg: "Please enter receiver phone number" },
-          isNumeric: { msg: "Please enter correct receiver phone number" }
-        }
+          isNumeric: { msg: "Please enter correct receiver phone number" },
+        },
       },
       shipmentDate: {
         type: DataTypes.DATE,
         allowNull: false,
-        validate: { notEmpty: { msg: "Please select shipment date" } }
+        validate: { notEmpty: { msg: "Please select shipment date" } },
       },
       inventoryId: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        validate: { notEmpty: { msg: "Please select inventory" } }
+        validate: { notEmpty: { msg: "Please select inventory" } },
       },
       status: {
         type: DataTypes.INTEGER,
         allowNull: false,
         defaultValue: STATUS.PENDING,
-        validate: { notEmpty: { msg: "status cannot be empty" } }
+        validate: { notEmpty: { msg: "status cannot be empty" } },
       },
-      orderMemo:{
+      orderMemo: {
         type: DataTypes.TEXT,
         allowNull: true,
-      }
+      },
     },
     {
       sequelize,
       paranoid: true,
-      modelName: "DispatchOrder"
+      modelName: "DispatchOrder",
     }
   );
 
