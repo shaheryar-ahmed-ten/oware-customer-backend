@@ -17,6 +17,9 @@ const {
   sequelize,
   OrderGroup,
   User,
+  InventoryDetail,
+  OutwardGroup,
+  OutwardGroupBatch,
 } = require("../models");
 const config = require("../config");
 const { Op, Sequelize, fn, col } = require("sequelize");
@@ -35,7 +38,11 @@ router.get("/", async (req, res, next) => {
     };
     where = attachDateFilter(req.query, where, "createdAt");
     if (req.query.search)
-      where[Op.or] = ["$Inventory.Warehouse.name$", "internalIdForBusiness", "referenceId"].map((key) => ({
+      where[Op.or] = [
+        "$Inventory.Warehouse.name$",
+        "internalIdForBusiness",
+        "referenceId",
+      ].map((key) => ({
         [key]: { [Op.like]: "%" + req.query.search + "%" },
       }));
     if (req.query.status)
@@ -63,7 +70,11 @@ router.get("/", async (req, res, next) => {
         {
           model: Inventory,
           as: "Inventories",
-          include: [{ model: Product, include: [{ model: UOM }] }, Company, Warehouse],
+          include: [
+            { model: Product, include: [{ model: UOM }] },
+            Company,
+            Warehouse,
+          ],
           where: { customerId: companyId },
           required: true,
         },
@@ -76,8 +87,13 @@ router.get("/", async (req, res, next) => {
     });
     for (const { dataValues } of response.rows) {
       dataValues["ProductOutwards"] = await ProductOutward.findAll({
-        include: ["OutwardGroups", "Vehicle"],
-        attributes: ["quantity", "referenceId", "internalIdForBusiness","externalVehicle"],
+        include: ["OutwardGroup", "Vehicle"],
+        attributes: [
+          "quantity",
+          "referenceId",
+          "internalIdForBusiness",
+          "externalVehicle",
+        ],
         required: false,
         where: { dispatchOrderId: dataValues.id },
       });
@@ -102,7 +118,11 @@ router.get("/export", async (req, res, next) => {
   worksheet = workbook.addWorksheet("Orders");
 
   const getColumnsConfig = (columns) =>
-    columns.map((column) => ({ header: column, width: Math.ceil(column.length * 1.5), outlineLevel: 1 }));
+    columns.map((column) => ({
+      header: column,
+      width: Math.ceil(column.length * 1.5),
+      outlineLevel: 1,
+    }));
 
   worksheet.columns = getColumnsConfig([
     "DISPATCH ORDER ID",
@@ -118,6 +138,10 @@ router.get("/export", async (req, res, next) => {
     "CREATED DATE",
     "STATUS",
     "ORDER MEMO",
+    "BATCH NUMBER",
+    "BATCH QUANTITY",
+    "MANUFACTURING DATE",
+    "EXPIRY DATE",
   ]);
 
   if (req.query.days) {
@@ -136,9 +160,13 @@ router.get("/export", async (req, res, next) => {
   }
 
   if (req.query.search)
-      where[Op.or] = ["$Inventory.Warehouse.name$", "internalIdForBusiness", "referenceId"].map((key) => ({
-        [key]: { [Op.like]: "%" + req.query.search + "%" },
-      }));
+    where[Op.or] = [
+      "$Inventory.Warehouse.name$",
+      "internalIdForBusiness",
+      "referenceId",
+    ].map((key) => ({
+      [key]: { [Op.like]: "%" + req.query.search + "%" },
+    }));
   if (req.query.status)
     where[Op.or] = ["status"].map((key) => ({
       [key]: { [Op.eq]: req.query.status },
@@ -149,7 +177,7 @@ router.get("/export", async (req, res, next) => {
     }));
 
   const { companyId } = await User.findOne({ where: { id: req.userId } });
-  const response = await DispatchOrder.findAndCountAll({
+  const response = await DispatchOrder.findAll({
     include: [
       {
         model: Inventory,
@@ -165,69 +193,100 @@ router.get("/export", async (req, res, next) => {
       {
         model: Inventory,
         as: "Inventories",
-        include: [{ model: Product, include: [{ model: UOM }] }, Company, Warehouse],
+        include: [
+          { model: Product, include: [{ model: UOM }] },
+          Company,
+          Warehouse,
+        ],
         where: { customerId: companyId },
         required: true,
       },
       {
         model: User,
       },
+      {
+        model: ProductOutward,
+        as: "ProductOutward",
+        include: [
+          {
+            model: OutwardGroup,
+            as: "OutwardGroup",
+            include: ["InventoryDetail"],
+          },
+        ],
+      },
     ],
     order: [["createdAt", "DESC"]],
     where,
   });
-  for (const { dataValues } of response.rows) {
-    dataValues["ProductOutwards"] = await ProductOutward.findAll({
-      include: ["OutwardGroups", "Vehicle"],
-      attributes: ["quantity", "referenceId", "internalIdForBusiness","externalVehicle"],
-      required: false,
-      where: { dispatchOrderId: dataValues.id },
-    });
-  }
+
   const orderArray = [];
-  for (const order of response.rows) {
-    for (const inv of order.Inventories) {
-      if (order.dataValues.ProductOutwards && order.dataValues.ProductOutwards.length > 0) {
-        for (const outInv of order.dataValues.ProductOutwards) {
-          orderArray.push([
-            order.internalIdForBusiness || "",
-            inv.Product.name,
-            order.Inventory.Warehouse.name,
-            inv.Product.UOM.name,
-            order.receiverName,
-            order.receiverPhone,
-            inv.OrderGroup.quantity,
-            outInv.OutwardGroups.find((oGroup) => oGroup.inventoryId === inv.OrderGroup.inventoryId)
-              ? outInv.OutwardGroups.find((oGroup) => oGroup.inventoryId === inv.OrderGroup.inventoryId).quantity
-              : 0, // incase of partial/fullfilled i.e 0 < outwards
-            order.referenceId || "",
-            `${order.User.firstName || ""} ${order.User.lastName || ""}`,
-            moment(order.createdAt).tz(req.query.client_Tz).format("DD/MM/yy HH:mm"),
-            order.status == "0"
-              ? "PENDING"
-              : order.status == "1"
-              ? "PARTIALLY FULFILLED"
-              : order.status == "2"
-              ? "FULFILLED"
-              : order.status == "3"
-              ? "CANCELLED"
-              : "",
-            order.orderMemo || "",
-          ]);
+
+  await Promise.all(
+    response.map(async (order) => {
+      if (order.ProductOutward.length > 0) {
+        for (const outward of order.ProductOutward) {
+          for (const outG of outward.OutwardGroup) {
+            for (const batch of outG.InventoryDetail) {
+              orderArray.push([
+                order.internalIdForBusiness || "",
+                order.Inventory.Product.name,
+                order.Inventory.Warehouse.name,
+                order.Inventory.Product.UOM.name,
+                order.receiverName,
+                order.receiverPhone,
+                order.Inventories.find((inv) => {
+                  return inv.productId === order.Inventory.Product.id;
+                })
+                  ? order.Inventories.find((inv) => {
+                      return inv.productId === order.Inventory.Product.id;
+                    }).OrderGroup.quantity
+                  : "-",
+                outG.quantity,
+                order.referenceId || "",
+                `${order.User.firstName || ""} ${order.User.lastName || ""}`,
+                moment(order.createdAt)
+                  .tz(req.query.client_Tz)
+                  .format("DD/MM/yy HH:mm"),
+                order.status == "0"
+                  ? "PENDING"
+                  : order.status == "1"
+                  ? "PARTIALLY FULFILLED"
+                  : order.status == "2"
+                  ? "FULFILLED"
+                  : order.status == "3"
+                  ? "CANCELLED"
+                  : "",
+                order.orderMemo || "",
+                batch.batchNumber || "",
+                batch.availableQuantity || "",
+                batch.manufacturingDate || "",
+                batch.expiryDate || "",
+              ]);
+            }
+          }
         }
       } else {
         orderArray.push([
           order.internalIdForBusiness || "",
-          inv.Product.name,
+          order.Inventory.Product.name,
           order.Inventory.Warehouse.name,
-          inv.Product.UOM.name,
+          order.Inventory.Product.UOM.name,
           order.receiverName,
           order.receiverPhone,
-          inv.OrderGroup.quantity,
-          0, // incase of pending i.e 0 outwards
+          order.Inventories.find((inv) => {
+            return inv.productId === order.Inventory.Product.id;
+          })
+            ? order.Inventories.find((inv) => {
+                return inv.productId === order.Inventory.Product.id;
+              }).OrderGroup.quantity
+            : "-",
+          0,
           order.referenceId || "",
           `${order.User.firstName || ""} ${order.User.lastName || ""}`,
-          moment(order.createdAt).tz(req.query.client_Tz).format("DD/MM/yy HH:mm"),
+          moment(order.createdAt)
+            .tz(req.query.client_Tz)
+            .format("DD/MM/yy HH:mm"),
           order.status == "0"
             ? "PENDING"
             : order.status == "1"
@@ -238,15 +297,111 @@ router.get("/export", async (req, res, next) => {
             ? "CANCELLED"
             : "",
           order.orderMemo || "",
+          "",
+          "",
+          "",
+          "",
         ]);
       }
-    }
-  }
+    })
+  );
+
+  // for (const order of response) {
+  //   for (const inv of order.Inventories) {
+  //     if (
+  //       order.dataValues.ProductOutwards &&
+  //       order.dataValues.ProductOutwards.length > 0
+  //     ) {
+  //       for (const outInv of order.dataValues.ProductOutwards) {
+  //         orderArray.push([
+  //           order.internalIdForBusiness || "",
+  //           inv.Product.name,
+  //           order.Inventory.Warehouse.name,
+  //           inv.Product.UOM.name,
+  //           order.receiverName,
+  //           order.receiverPhone,
+  //           inv.OrderGroup.quantity,
+  //           outInv.OutwardGroup.find(
+  //             (oGroup) => oGroup.inventoryId === inv.OrderGroup.inventoryId
+  //           )
+  //             ? outInv.OutwardGroup.find(
+  //                 (oGroup) => oGroup.inventoryId === inv.OrderGroup.inventoryId
+  //               ).quantity
+  //             : 0, // incase of partial/fullfilled i.e 0 < outwards
+  //           order.referenceId || "",
+  //           `${order.User.firstName || ""} ${order.User.lastName || ""}`,
+  //           moment(order.createdAt)
+  //             .tz(req.query.client_Tz)
+  //             .format("DD/MM/yy HH:mm"),
+  //           order.status == "0"
+  //             ? "PENDING"
+  //             : order.status == "1"
+  //             ? "PARTIALLY FULFILLED"
+  //             : order.status == "2"
+  //             ? "FULFILLED"
+  //             : order.status == "3"
+  //             ? "CANCELLED"
+  //             : "",
+  //           order.orderMemo || "",
+  //           order.OutwardGroup
+  //             ? order.OutwardGroup.InventoryDetail.batchNumber
+  //             : "",
+  //           order.OutwardGroup
+  //             ? order.OutwardGroup.InventoryDetail.availableQuantity
+  //             : "",
+  //           order.OutwardGroup
+  //             ? order.OutwardGroup.InventoryDetail.manufacturingDate
+  //             : "",
+  //           order.OutwardGroup
+  //             ? order.OutwardGroup.InventoryDetail.expiryDate
+  //             : "",
+  //         ]);
+  //       }
+  //     } else {
+  //       orderArray.push([
+  //         order.internalIdForBusiness || "",
+  //         inv.Product.name,
+  //         order.Inventory.Warehouse.name,
+  //         inv.Product.UOM.name,
+  //         order.receiverName,
+  //         order.receiverPhone,
+  //         inv.OrderGroup.quantity,
+  //         0, // incase of pending i.e 0 outwards
+  //         order.referenceId || "",
+  //         `${order.User.firstName || ""} ${order.User.lastName || ""}`,
+  //         moment(order.createdAt)
+  //           .tz(req.query.client_Tz)
+  //           .format("DD/MM/yy HH:mm"),
+  //         order.status == "0"
+  //           ? "PENDING"
+  //           : order.status == "1"
+  //           ? "PARTIALLY FULFILLED"
+  //           : order.status == "2"
+  //           ? "FULFILLED"
+  //           : order.status == "3"
+  //           ? "CANCELLED"
+  //           : "",
+  //         order.orderMemo || "",
+  //         "",
+  //         "",
+  //         "",
+  //         "",
+  //       ]);
+  //     }
+  //     // }
+  //   }
+  // }
 
   worksheet.addRows(orderArray);
 
-  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-  res.setHeader("Content-Disposition", "attachment; filename=" + "Inventory.xlsx");
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+  res.setHeader(
+    "Content-Disposition",
+    "attachment; filename=" + "Inventory.xlsx"
+  );
 
   await workbook.xlsx.write(res).then(() => res.end());
 });
@@ -255,8 +410,12 @@ router.get("/export", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   let message = "New dispatchOrder registered";
   let dispatchOrder;
-  req.body["shipmentDate"] = new Date(moment(req.body["shipmentDate"]).tz("Africa/Abidjan"));
-  req.body.inventories = req.body.inventories || [{ id: req.body.inventoryId, quantity: req.body.quantity }];
+  req.body["shipmentDate"] = new Date(
+    moment(req.body["shipmentDate"]).tz("Africa/Abidjan")
+  );
+  req.body.inventories = req.body.inventories || [
+    { id: req.body.inventoryId, quantity: req.body.quantity },
+  ];
   req.body.customerId = req.userId;
   try {
     await sequelize.transaction(async (transaction) => {
@@ -268,7 +427,8 @@ router.post("/", async (req, res, next) => {
         { transaction }
       );
       const numberOfInternalIdForBusiness = digitize(dispatchOrder.id, 6);
-      dispatchOrder.internalIdForBusiness = req.body.internalIdForBusiness + numberOfInternalIdForBusiness;
+      dispatchOrder.internalIdForBusiness =
+        req.body.internalIdForBusiness + numberOfInternalIdForBusiness;
       let sumOfComitted = [];
       let comittedAcc;
       req.body.inventories.forEach((Inventory) => {
@@ -284,7 +444,8 @@ router.post("/", async (req, res, next) => {
       inventoryIds = req.body.inventories.map((inventory) => {
         return inventory.id;
       });
-      const toFindDuplicates = (arry) => arry.filter((item, index) => arry.indexOf(item) != index);
+      const toFindDuplicates = (arry) =>
+        arry.filter((item, index) => arry.indexOf(item) != index);
       const duplicateElements = toFindDuplicates(inventoryIds);
       if (duplicateElements.length != 0) {
         throw new Error("Can not add same inventory twice");
@@ -302,18 +463,23 @@ router.post("/", async (req, res, next) => {
 
       return Promise.all(
         req.body.inventories.map((_inventory) => {
-          return Inventory.findByPk(_inventory.id, { transaction }).then((inventory) => {
-            if (!inventory && !_inventory.id) throw new Error("Inventory is not available");
-            if (_inventory.quantity > inventory.availableQuantity)
-              throw new Error("Cannot create orders above available quantity");
-            try {
-              inventory.committedQuantity += +_inventory.quantity;
-              inventory.availableQuantity -= +_inventory.quantity;
-              return inventory.save({ transaction });
-            } catch (err) {
-              throw new Error(err.errors.pop().message);
+          return Inventory.findByPk(_inventory.id, { transaction }).then(
+            (inventory) => {
+              if (!inventory && !_inventory.id)
+                throw new Error("Inventory is not available");
+              if (_inventory.quantity > inventory.availableQuantity)
+                throw new Error(
+                  "Cannot create orders above available quantity"
+                );
+              try {
+                inventory.committedQuantity += +_inventory.quantity;
+                inventory.availableQuantity -= +_inventory.quantity;
+                return inventory.save({ transaction });
+              } catch (err) {
+                throw new Error(err.errors.pop().message);
+              }
             }
-          });
+          );
         })
       );
     });
@@ -431,6 +597,7 @@ router.get("/products", async (req, res, next) => {
     });
 });
 
+
 router.get("/:id", async (req, res, next) => {
   const limit = req.query.rowsPerPage || config.rowsPerPage;
   const offset = (req.query.page - 1 || 0) * limit;
@@ -442,7 +609,11 @@ router.get("/:id", async (req, res, next) => {
         {
           model: Inventory,
           as: "Inventories",
-          include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }],
+          include: [
+            { model: Product, include: [{ model: UOM }] },
+            { model: Company },
+            { model: Warehouse },
+          ],
         },
         {
           model: ProductOutward,
@@ -450,7 +621,11 @@ router.get("/:id", async (req, res, next) => {
             {
               model: Inventory,
               as: "Inventories",
-              include: [{ model: Product, include: [{ model: UOM }] }, { model: Company }, { model: Warehouse }],
+              include: [
+                { model: Product, include: [{ model: UOM }] },
+                { model: Company },
+                { model: Warehouse },
+              ],
             },
             {
               model: Vehicle,
