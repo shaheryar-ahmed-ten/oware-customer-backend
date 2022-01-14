@@ -180,7 +180,14 @@ router.get("/export", async (req, res, next) => {
       {
         model: InwardGroup,
         as: "InwardGroup",
-        include: ["InventoryDetail", "Product"],
+        include: [
+          "InventoryDetail",
+          {
+            model: Product,
+            as: "Product",
+            include: [{ model: UOM, as: "UOM" }],
+          },
+        ],
       },
     ],
     order: [["createdAt", "DESC"]],
@@ -190,7 +197,7 @@ router.get("/export", async (req, res, next) => {
   const inwardArray = [];
 
   await Promise.all(
-    response.rows.map(async (inward) => {
+    response.map(async (inward) => {
       for (const IG of inward.InwardGroup) {
         for (const batch of IG.InventoryDetail) {
           inwardArray.push([
@@ -198,7 +205,7 @@ router.get("/export", async (req, res, next) => {
             IG.Product.name,
             inward.Warehouse.name,
             IG.Product.UOM.name,
-            IG.Product.InwardGroup.quantity,
+            IG.quantity,
             inward.vehicleType || "",
             inward.vehicleNumber || "",
             inward.vehicleName || "",
@@ -262,9 +269,6 @@ router.get("/export", async (req, res, next) => {
       // }
     })
   );
-
-  for (const inward of response.rows) {
-  }
 
   worksheet.addRows(inwardArray);
 
